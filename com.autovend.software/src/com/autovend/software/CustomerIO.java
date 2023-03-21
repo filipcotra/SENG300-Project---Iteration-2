@@ -57,6 +57,11 @@ public interface CustomerIO {
 	 * Simulates the customer removing the bill from the slot
 	 */
 	public void removeBill(BillSlot slot);
+	
+	/**
+	 * Simulates the customer wanting to add their membership number to the transaction
+	 */
+	public void enterMembershipNumber();
 
 	
 	
