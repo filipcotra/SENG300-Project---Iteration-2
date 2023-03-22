@@ -80,7 +80,7 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	@Override
 	public void reactToWeightChangedEvent(ElectronicScale scale, double weightInGrams) {
 		// TODO Auto-generated method stub
-		this.blockSystem();
+		this.blockSystem();		// block system when a weight change is detected
 		this.actualWeight = weightInGrams;
 		if (actualWeight != this.expectedWeight) {
 			weightDiscrepancy = true;
@@ -92,15 +92,15 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 			// Step 4. Attendant approves discrepancy
 			// Attendant interaction required: attendantIO.approveWeightDiscrepancy()
 			if (attendantIO.approveWeightDiscrepancy()) {
-				this.unblockSystem(); // Unblock the system (Step 7)
-				this.expectedWeight = this.actualWeight;
+				this.unblockSystem(); // Unblock the system
+				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
 			}
 			// If they don't approve, then remain blocked
 			else {
 				this.blockSystem();
 			}
 		} else { // If there is no discrepancy then unblock the system
-			if (purchasingBags == true) {
+			if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
 				this.finishedPurchasingBags();
 			}
 			this.unblockSystem(); // Step 7, unblock the system 
