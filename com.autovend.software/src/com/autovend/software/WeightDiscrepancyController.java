@@ -80,6 +80,7 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 		// TODO Auto-generated method stub
 		this.actualWeight = weightInGrams;
 		if (actualWeight != this.expectedWeight) {
+			weightDiscrepancy = true;
 			// Step 1. Block self checkout system (already done)
 			// Step 2. Notify CustomerIO
 			// Step 3. Notify Attendant
