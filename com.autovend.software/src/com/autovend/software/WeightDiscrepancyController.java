@@ -83,11 +83,14 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 			weightDiscrepancy = true;
 			// Step 1. Block self checkout system (already done)
 			// Step 2. Notify CustomerIO
+			customerIO.notifyWeightDiscrepancyCustomerIO();
 			// Step 3. Notify Attendant
+			attendantIO.notifyWeightDiscrepancyAttendantIO();
 			// Step 4. Attendant approves discrepancy
 			// Attendant interaction required: attendantIO.approveWeightDiscrepancy()
 			if (attendantIO.approveWeightDiscrepancy()) {
 				this.unblockSystem(); // Unblock the system (Step 7)
+				this.expectedWeight = this.actualWeight;
 			}
 			// If they don't approve, then remain blocked
 			else {
