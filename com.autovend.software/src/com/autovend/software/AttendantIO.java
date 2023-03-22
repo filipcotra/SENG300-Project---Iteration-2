@@ -38,4 +38,17 @@ public interface AttendantIO {
 	 * attendant will also be informed that the station needs maintenance.
 	 */
 	public void printDuplicateReceipt();
+	
+	/**
+	 * Simulates the attendant checking the bags the customer wants to add
+	 */
+	public void checkAddedOwnBags();
+	
+	/**
+	 * 
+	 * @param choice
+	 * 			Whether or not the attendant accepts the bags
+	 * @return True if bags have been accepted
+	 */
+	public boolean acceptOwnBags(boolean choice);
 }

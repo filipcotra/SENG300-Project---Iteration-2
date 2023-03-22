@@ -6,12 +6,17 @@ import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.ElectronicScaleObserver;
 
+import java.util.ArrayList;
+
+import com.autovend.*;
+
 public class BaggingAreaController implements ElectronicScaleObserver{
 	
 	SelfCheckoutStation station;
 	CustomerIO customerIO;
 	AttendantIO attendantIO;
 	PaymentControllerLogic paymentController;
+	boolean ownBags = false;
 	
 	public BaggingAreaController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
 		this.station = station;
@@ -75,5 +80,9 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		// TODO Auto-generated method stub
 		
 	}
-
-}
+	
+	public void addOwnBags() {
+			attendantIO.checkAddedOwnBags();
+			ownBags = true;
+			}
+	}
