@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Currency;
+import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,7 +60,11 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	private ArrayList<String> itemCostList = new ArrayList<String>();
 	private BigDecimal amountPaid;
 	private BigDecimal totalChange;
-	private BillSlot output;
+	private Map<BigDecimal, CoinDispenser> coinDispensers;
+	private List<BigDecimal> coinDenominations;
+	private BigDecimal maxCoinDenom;
+	private BigDecimal minCoinDenom;
+	
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -90,9 +95,15 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.myCustomer = customer;
 		this.myAttendant = attendant;
 		this.printerLogic = printerLogic;
+		this.coinDenominations = station.coinDenominations;
+		Collections.sort(this.coinDenominations);
+		this.maxCoinDenom = Collections.max(this.coinDenominations);
+		this.minCoinDenom = Collections.min(this.coinDenominations);
+		this.coinDispensers = station.coinDispensers;
+		for (BigDecimal value : this.coinDenominations) {
+			this.coinDispensers.get(value).register(this);
+		}
 		this.amountPaid = BigDecimal.valueOf(0.0);
-		this.output = station.billOutput;
-		this.output.register(this);
 		this.cartTotal = BigDecimal.valueOf(0.0);
 		this.totalChange = BigDecimal.valueOf(0.0);
 		this.changeDue = BigDecimal.valueOf(0.0);
@@ -229,21 +240,58 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 * it dispenses. If not, it finds the next best denomination before dispensing.
 	 * (Step 7)
 	 */
-	public void dispenseChange() {
+	private void dispenseChange() {
+		BillDispenser dispenser;
 		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) == 0) {
 			throw new SimulationException(new Exception("This should never happen"));
 		}
 		/** If the changeDue is less than the lowest denom, call attendant automatically */
 		else if(this.getChangeDue().compareTo(this.minDenom) == -1) {
-			this.myAttendant.changeRemainsNoDenom(this.getChangeDue());
+			this.dispenseCoins();
 			/** No need to suspend machine, nothing is empty its just a lack of denoms */
 		}
-		BillDispenser dispenser;
 		/** Go through denominations backwards, largest to smallest */
 		for(int index = this.denominations.length-1 ; index >= 0 ; index--) {
 			dispenser = this.dispensers.get(this.denominations[index]);
 			/** If the value of the bill is less than or equal to the change and change is payable */
 			if(BigDecimal.valueOf(this.denominations[index]).compareTo(this.getChangeDue()) <= 0) {
+				try {
+					dispenser.emit();
+					index++;
+				}
+				/** If empty and not the smallest denom, move on. If the smallest denom, inform attendant */
+				catch(EmptyException e) {
+					if(BigDecimal.valueOf(this.denominations[index]).compareTo(this.minDenom) == 0) {
+						/** In this case change will be larger than smallest denom but unpayable */
+						this.dispenseCoins();
+						break;
+					}
+					else {
+						continue;
+					}
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+					// Unspecified functionality
+				}
+			}
+		}
+	}
+
+	private void dispenseCoins() {
+		CoinDispenser dispenser;
+		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) == 0) {
+			throw new SimulationException(new Exception("This should never happen"));
+		}
+		else if(this.getChangeDue().compareTo(this.minCoinDenom) == -1) {
+			this.myAttendant.changeRemainsNoDenom(this.getChangeDue());
+			/** No need to suspend machine, nothing is empty its just a lack of denoms */
+		}
+		/** Go through denominations backwards, largest to smallest */
+		for(int index = this.coinDenominations.size()-1 ; index >= 0 ; index--) {
+			dispenser = this.coinDispensers.get(this.coinDenominations.get(index));
+			/** If the value of the bill is less than or equal to the change and change is payable */
+			if(this.coinDenominations.get(index).compareTo(this.getChangeDue()) <= 0) {
 				try {
 					dispenser.emit();
 					index++;
@@ -263,18 +311,18 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 				catch(Exception e) {
 					e.printStackTrace();
 					// Unspecified functionality
-				}
+				}				
 			}
 		}
 	}
-
+	
 	/**
 	 * Subtracts value from the cart based on the value of the bill
 	 * added. (Step 2, Step 3, Step 5, Step 6)
 	 */
-	public void payBill(BigDecimal billValue) {
-		this.updateAmountPaid(billValue);
-		this.setCartTotal(this.getCartTotal().subtract(billValue));
+	public void payCash(BigDecimal cashValue) {
+		this.updateAmountPaid(cashValue);
+		this.setCartTotal(this.getCartTotal().subtract(cashValue));
 		myCustomer.showUpdatedTotal(this.getCartTotal());
 		/** If the customer has paid their cart, check for change */
 		if(this.getCartTotal().compareTo(BigDecimal.valueOf(0.0)) <= 0) {
@@ -289,7 +337,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 			}
 		}
 	}
-
+	
 /* ------------------------ Observer Overrides -----------------------------------------------*/
 	
 	/* ---------------- Abstract --------------------------------*/
@@ -313,7 +361,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 */
 	@Override
 	public void reactToValidBillDetectedEvent(BillValidator validator, Currency currency, int value) {
-		this.payBill(BigDecimal.valueOf(value));
+		this.payCash(BigDecimal.valueOf(value));
 	}
 
 	@Override
@@ -369,7 +417,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	/* ---------------- BillSlot ------------------------*/
 	@Override
 	public void reactToBillInsertedEvent(BillSlot slot) {
-		// TODO Auto-generated method stub	
+		// Ignoring in this iteration	
 	}
 
 	/**
@@ -383,43 +431,48 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 
 	@Override
 	public void reactToBillRemovedEvent(BillSlot slot) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
 	}
 
 	/* ---------------- Coin Dispenser ------------------*/	
 	@Override
 	public void reactToCoinsFullEvent(CoinDispenser dispenser) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
 		
 	}
 
 	@Override
 	public void reactToCoinsEmptyEvent(CoinDispenser dispenser) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
 		
 	}
 
 	@Override
 	public void reactToCoinAddedEvent(CoinDispenser dispenser, Coin coin) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
 		
 	}
 
 	@Override
 	public void reactToCoinRemovedEvent(CoinDispenser dispenser, Coin coin) {
-		// TODO Auto-generated method stub
-		
+		this.setChangeDue(this.getChangeDue().subtract(coin.getValue()));
+		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0) {
+			this.dispenseChange();
+		}
+		else {
+			this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
+		}
 	}
 
 	@Override
 	public void reactToCoinsLoadedEvent(CoinDispenser dispenser, Coin... coins) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
 		
 	}
 
 	@Override
 	public void reactToCoinsUnloadedEvent(CoinDispenser dispenser, Coin... coins) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
 		
 	}
 
@@ -433,13 +486,12 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	/* ---------------- Coin Validator ------------------*/
 	@Override
 	public void reactToValidCoinDetectedEvent(CoinValidator validator, BigDecimal value) {
-		// TODO Auto-generated method stub
-		
+		this.payCash(value);
 	}
 
 	@Override
 	public void reactToInvalidCoinDetectedEvent(CoinValidator validator) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
 		
 	}
 }
