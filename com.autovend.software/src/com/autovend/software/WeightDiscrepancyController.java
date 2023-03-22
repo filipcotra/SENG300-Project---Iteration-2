@@ -15,6 +15,7 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	double expectedWeight; // The expected weight of the self checkout station when an item is scanned
 	double actualWeight; // The actual weight of the self checkout station when an item is scanned
 	public boolean weightDiscrepancy = false;
+	public boolean purchasingBags;
 	
 	public WeightDiscrepancyController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
 		this.station = station;
@@ -97,8 +98,17 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 				this.blockSystem();
 			}
 		} else { // If there is no discrepancy then unblock the system
+			if (purchasingBags == true) {
+				this.finishedPurchasingBags();
+			}
 			this.unblockSystem(); // Step 7, unblock the system 
 		}
+	}
+	
+	public void finishedPurchasingBags() {
+		purchasingBags = false;
+		customerIO.signalFinishedPurchasingBags();
+		customerIO.signalReadyForInteraction();
 	}
 
 	@Override
