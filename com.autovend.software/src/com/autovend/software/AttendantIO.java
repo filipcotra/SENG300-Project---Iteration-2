@@ -15,6 +15,13 @@ import java.math.BigDecimal;
  *
  */
 public interface AttendantIO {
+	
+	/**
+	 * Simulates the customer receiving a signal from the system about the weight of the scale
+	 * not matching the expected weight when an item was placed
+	 */
+	public void notifyWeightDiscrepancyAttendantIO();
+	
 	/**
 	 * Simulates an attendant approving/rejecting a weight discrepancy
 	 * This interaction is apart of the Weight Discrepancy use case
