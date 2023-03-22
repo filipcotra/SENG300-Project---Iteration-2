@@ -17,14 +17,21 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import com.autovend.Bill;
+import com.autovend.Coin;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.BillValidator;
+import com.autovend.devices.CoinDispenser;
+import com.autovend.devices.CoinTray;
+import com.autovend.devices.CoinValidator;
 import com.autovend.devices.EmptyException;
 import com.autovend.devices.ReceiptPrinter;
 import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.BillValidatorObserver;
+import com.autovend.devices.observers.CoinDispenserObserver;
+import com.autovend.devices.observers.CoinTrayObserver;
+import com.autovend.devices.observers.CoinValidatorObserver;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
 import com.autovend.devices.observers.BillStorageObserver;
@@ -36,7 +43,7 @@ import com.autovend.devices.SimulationException;
  * 
  * @author Filip Cotra
  */
-public class PaymentControllerLogic implements BillValidatorObserver, BillDispenserObserver, BillSlotObserver {
+public class PaymentControllerLogic implements BillValidatorObserver, BillDispenserObserver, BillSlotObserver, CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver {
 	private BigDecimal cartTotal;
 	private BigDecimal changeDue;
 	private SelfCheckoutStation station;
@@ -91,6 +98,8 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.changeDue = BigDecimal.valueOf(0.0);
 	}
 
+/* ------------------------ General Methods --------------------------------------------------*/
+	
 	/**
 	 * Updates the amount paid by the customer.
 	 * 
@@ -210,6 +219,8 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.station.scale.disable();
 	}
 	
+/* ------------------------ Cash Payment Methods ---------------------------------------------*/	
+	
 	/**
 	 * Dispenses change based on denominations. Looks through denominations in the 
 	 * installed station and finds dispensers for each based on value, and determines
@@ -256,7 +267,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 			}
 		}
 	}
-	
+
 	/**
 	 * Subtracts value from the cart based on the value of the bill
 	 * added. (Step 2, Step 3, Step 5, Step 6)
@@ -278,7 +289,10 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 			}
 		}
 	}
+
+/* ------------------------ Observer Overrides -----------------------------------------------*/
 	
+	/* ---------------- Abstract --------------------------------*/
 	@Override
 	public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
 		// Ignoring in this iteration
@@ -291,6 +305,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		
 	}
 
+	/* ---------------- Bill Validator -------------------*/
 	/**
 	 * Making this observer call the payment method. This makes sense, as it is the only input
 	 * observer that actually has the bill and its value, and it only makes sense that payment
@@ -306,6 +321,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		// Ignoring in this iteration
 	}
 
+	/* ---------------- Bill Dispenser -------------------*/
 	@Override
 	public void reactToBillsFullEvent(BillDispenser dispenser) {
 		// Ignoring in this iteration
@@ -350,6 +366,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		// Ignoring in this iteration
 	}
 
+	/* ---------------- BillSlot ------------------------*/
 	@Override
 	public void reactToBillInsertedEvent(BillSlot slot) {
 		// TODO Auto-generated method stub	
@@ -367,5 +384,62 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	@Override
 	public void reactToBillRemovedEvent(BillSlot slot) {
 		// TODO Auto-generated method stub
+	}
+
+	/* ---------------- Coin Dispenser ------------------*/	
+	@Override
+	public void reactToCoinsFullEvent(CoinDispenser dispenser) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reactToCoinsEmptyEvent(CoinDispenser dispenser) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reactToCoinAddedEvent(CoinDispenser dispenser, Coin coin) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reactToCoinRemovedEvent(CoinDispenser dispenser, Coin coin) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reactToCoinsLoadedEvent(CoinDispenser dispenser, Coin... coins) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reactToCoinsUnloadedEvent(CoinDispenser dispenser, Coin... coins) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/* ---------------- Coin Tray -----------------------*/
+	@Override
+	public void reactToCoinAddedEvent(CoinTray tray) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/* ---------------- Coin Validator ------------------*/
+	@Override
+	public void reactToValidCoinDetectedEvent(CoinValidator validator, BigDecimal value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reactToInvalidCoinDetectedEvent(CoinValidator validator) {
+		// TODO Auto-generated method stub
+		
 	}
 }
