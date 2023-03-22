@@ -14,6 +14,7 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	PaymentControllerLogic paymentController;
 	double expectedWeight; // The expected weight of the self checkout station when an item is scanned
 	double actualWeight; // The actual weight of the self checkout station when an item is scanned
+	public CustomerIOTempPurchaseOwnBags customerIOTemp;
 	public boolean weightDiscrepancy = false;
 	public boolean purchasingBags;
 	
@@ -107,8 +108,8 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	
 	public void finishedPurchasingBags() {
 		purchasingBags = false;
-		customerIO.signalFinishedPurchasingBags();
-		customerIO.signalReadyForInteraction();
+		customerIOTemp.signalFinishedPurchasingBags();
+		customerIOTemp.signalReadyForInteraction();
 	}
 
 	@Override
