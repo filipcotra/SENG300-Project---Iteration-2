@@ -213,7 +213,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	}
 
 	/**
-	 * Suspends machine
+	 * Suspends machine. This is updated with the new SelfCheckoutMachine objects now.
 	 */
 	private void suspendMachine() {
 		this.station.baggingArea.disable();
@@ -228,6 +228,45 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.station.mainScanner.disable();
 		this.station.printer.disable();
 		this.station.scale.disable();
+		this.station.cardReader.disable();
+		this.station.coinSlot.disable();
+		this.station.coinTray.disable();
+		this.station.coinStorage.disable();
+		this.station.coinValidator.disable();
+		for(BigDecimal denom : this.coinDenominations) {
+			this.station.coinDispensers.get(denom).disable();
+		}
+	}
+	
+	/**
+	 * Enables cash payment, which should be disabled by default.
+	 * This should be called by the CustomerIO when they select a payment
+	 * method. To do so, it simply enables all cash payment devices.
+	 */
+	private void enableCashPayment() {
+		this.station.coinSlot.enable();
+		this.station.coinTray.enable();
+		this.station.coinStorage.enable();
+		this.station.coinValidator.enable();
+		for(BigDecimal denom : this.coinDenominations) {
+			this.station.coinDispensers.get(denom).enable();
+		}
+		for(int denom : this.denominations) {
+			this.station.billDispensers.get(denom).enable();
+		}
+		this.station.billInput.enable();
+		this.station.billOutput.enable();
+		this.station.billStorage.enable();
+		this.station.billValidator.enable();
+	}
+	
+	/**
+	 * This enables the card payments. As with cash payment method
+	 * above, this should be called when payment is selected, and
+	 * enables all necessary devices (just CardReader in this case).
+	 */
+	public void enableCardPayment() {
+		this.station.cardReader.enable();
 	}
 	
 /* ------------------------ Cash Payment Methods ---------------------------------------------*/	
