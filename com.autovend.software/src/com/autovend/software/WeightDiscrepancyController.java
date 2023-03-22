@@ -12,6 +12,8 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	CustomerIO customerIO;
 	AttendantIO attendantIO;
 	PaymentControllerLogic paymentController;
+	double expectedWeight; // The expected weight of the self checkout station when an item is scanned
+	double actualWeight; // The actual weight of the self checkout station when an item is scanned
 	
 	public WeightDiscrepancyController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
 		this.station = station;
