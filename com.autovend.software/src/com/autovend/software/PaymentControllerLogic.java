@@ -238,17 +238,18 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 * first whether the denomination is appropriate (the largest bill smaller than the
 	 * change left) and then if the dispenser is empty or not. If both conditions are met, 
 	 * it dispenses. If not, it finds the next best denomination before dispensing.
-	 * (Step 7)
+	 * (Step 7). If the amount of change due cannot be dispensed by the bills, due to
+	 * either too small of change due or due to empty dispensers, it will call for
+	 * coins to be dispensed as change.
 	 */
 	private void dispenseChange() {
 		BillDispenser dispenser;
 		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) == 0) {
 			throw new SimulationException(new Exception("This should never happen"));
 		}
-		/** If the changeDue is less than the lowest denom, call attendant automatically */
+		/** If the changeDue is less than the lowest denom, dispense coins */
 		else if(this.getChangeDue().compareTo(this.minDenom) == -1) {
 			this.dispenseCoins();
-			/** No need to suspend machine, nothing is empty its just a lack of denoms */
 		}
 		/** Go through denominations backwards, largest to smallest */
 		for(int index = this.denominations.length-1 ; index >= 0 ; index--) {
@@ -259,10 +260,10 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 					dispenser.emit();
 					index++;
 				}
-				/** If empty and not the smallest denom, move on. If the smallest denom, inform attendant */
+				/** If empty and not the smallest denom, move on. If the smallest denom, dispense coins */
 				catch(EmptyException e) {
 					if(BigDecimal.valueOf(this.denominations[index]).compareTo(this.minDenom) == 0) {
-						/** In this case change will be larger than smallest denom but unpayable */
+						/** In this case change will be larger than smallest denom but unpayable through bills */
 						this.dispenseCoins();
 						break;
 					}
@@ -278,6 +279,10 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		}
 	}
 
+	/**
+	 * Dispenses change based on denominations in the form of coins. If unable
+	 * to do so, it will inform the attendant because 
+	 */	
 	private void dispenseCoins() {
 		CoinDispenser dispenser;
 		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) == 0) {
@@ -290,7 +295,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		/** Go through denominations backwards, largest to smallest */
 		for(int index = this.coinDenominations.size()-1 ; index >= 0 ; index--) {
 			dispenser = this.coinDispensers.get(this.coinDenominations.get(index));
-			/** If the value of the bill is less than or equal to the change and change is payable */
+			/** If the value of the coin is less than or equal to the change and change is payable */
 			if(this.coinDenominations.get(index).compareTo(this.getChangeDue()) <= 0) {
 				try {
 					dispenser.emit();
@@ -453,6 +458,11 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		
 	}
 
+	/**
+	 * When a coin has been successfully removed, adjust the change
+	 * accordingly. Basically functions identically to the equivalent
+	 * BillDispenserObserver method that I have implemented above.
+	 */
 	@Override
 	public void reactToCoinRemovedEvent(CoinDispenser dispenser, Coin coin) {
 		this.setChangeDue(this.getChangeDue().subtract(coin.getValue()));
@@ -484,6 +494,11 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	}
 
 	/* ---------------- Coin Validator ------------------*/
+	/**
+	 * When a valid coin is detected, make the payment. This is basically
+	 * the same as the BillValidatorObserver method implemented above, just
+	 * for coins.
+	 */
 	@Override
 	public void reactToValidCoinDetectedEvent(CoinValidator validator, BigDecimal value) {
 		this.payCash(value);
