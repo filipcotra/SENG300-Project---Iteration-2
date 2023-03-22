@@ -80,6 +80,7 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	@Override
 	public void reactToWeightChangedEvent(ElectronicScale scale, double weightInGrams) {
 		// TODO Auto-generated method stub
+		this.blockSystem();
 		this.actualWeight = weightInGrams;
 		if (actualWeight != this.expectedWeight) {
 			weightDiscrepancy = true;
