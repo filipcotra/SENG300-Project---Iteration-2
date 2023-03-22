@@ -47,6 +47,20 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 		this.station.billStorage.enable();
 		this.station.billValidator.enable();
 	}
+	
+	/**
+	 * Getter for expectedWeight. Returns expectedWeight.
+	 */
+	public double getExpectedWeight() {
+		return this.expectedWeight;
+	}
+	
+	/**
+	 * Getter for actualWeight. Returns expectedWeight.
+	 */
+	public double getActualWeight() {
+		return this.actualWeight;
+	}
 
 	@Override
 	public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
