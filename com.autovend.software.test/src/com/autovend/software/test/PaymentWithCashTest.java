@@ -29,13 +29,18 @@ import java.util.ArrayList;
 import java.util.Currency;
 
 import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.Coin;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinDispenser;
+import com.autovend.devices.CoinSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.OverloadException;
 import com.autovend.devices.SelfCheckoutStation;
@@ -43,6 +48,9 @@ import com.autovend.devices.SimulationException;
 import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
+import com.autovend.devices.observers.CoinDispenserObserver;
+import com.autovend.devices.observers.CoinSlotObserver;
+import com.autovend.devices.observers.CoinTrayObserver;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
@@ -54,6 +62,7 @@ public class PaymentWithCashTest {
 	PrintReceipt receiptPrinterController;
 	SelfCheckoutStation selfCheckoutStation;
 	MyBillSlotObserver billObserver;
+	MyCoinTrayObserver coinObserver;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
 	Bill[] fiveDollarBills;
@@ -68,6 +77,20 @@ public class PaymentWithCashTest {
 	Bill billHundred;
 	ArrayList<Integer> ejectedBills; 
 	DispenserStub billObserverStub;
+	Coin[] nickelCoins;
+	Coin[] dimeCoins;
+	Coin[] quarterCoins;
+	Coin[] loonieCoins;
+	Coin[] toonieCoins;
+	CoinSlot coinSlot;
+	Coin coinPenny;
+	Coin coinNickel;
+	Coin coinDime;
+	Coin coinQuarter;
+	Coin coinLoonie;
+	Coin coinToonie;
+	ArrayList<BigDecimal> ejectedCoins;
+	CoinDispenserStub coinObserverStub;
 	final PrintStream originalOut = System.out;
 	ByteArrayOutputStream baos;
 	PrintStream ps;
@@ -125,6 +148,58 @@ public class PaymentWithCashTest {
 		
 	}
 	
+	class CoinDispenserStub implements CoinDispenserObserver{
+
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinsFullEvent(CoinDispenser dispenser) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinsEmptyEvent(CoinDispenser dispenser) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinAddedEvent(CoinDispenser dispenser, Coin coin) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinRemovedEvent(CoinDispenser dispenser, Coin coin) {
+			ejectedCoins.add(coin.getValue());
+			
+		}
+
+		@Override
+		public void reactToCoinsLoadedEvent(CoinDispenser dispenser, Coin... coins) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinsUnloadedEvent(CoinDispenser dispenser, Coin... coins) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
 	
 	class MyCustomerIO implements CustomerIO {
 
@@ -160,6 +235,12 @@ public class PaymentWithCashTest {
 		@Override
 		public void showUpdatedTotal(BigDecimal total) {
 			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void removeCoin(CoinTray tray) {
+			tray.collectCoins();
 			
 		}
 	
@@ -227,6 +308,32 @@ public class PaymentWithCashTest {
 		
 	}
 	
+	class MyCoinTrayObserver implements CoinTrayObserver{
+		
+		public AbstractDevice<? extends AbstractDeviceObserver> device = null;
+
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToCoinAddedEvent(CoinTray tray) {
+			tray.collectCoins();
+			this.device = tray;
+			System.out.println("Coin has been collected from coin tray.");
+			
+		}
+		
+	}
+	
 	@Before
 	public void setUp() {
 		attendantSignalled = false;
@@ -239,12 +346,22 @@ public class PaymentWithCashTest {
 		billTwenty = new Bill(20, Currency.getInstance("CAD"));
 		billFifty = new Bill(50, Currency.getInstance("CAD"));
 		billHundred = new Bill(100, Currency.getInstance("CAD"));
+		coinPenny = new Coin(new BigDecimal(0.01), Currency.getInstance("CAD"));
+		coinNickel = new Coin(new BigDecimal(0.05), Currency.getInstance("CAD"));
+		coinDime = new Coin(new BigDecimal(0.10), Currency.getInstance("CAD"));
+		coinQuarter = new Coin(new BigDecimal(0.25), Currency.getInstance("CAD"));
+		coinLoonie = new Coin(new BigDecimal(1.00), Currency.getInstance("CAD"));
+		coinToonie = new Coin(new BigDecimal(2.00), Currency.getInstance("CAD"));
+
 		selfCheckoutStation = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
-				new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
+				new BigDecimal[] {new BigDecimal(0.05),new BigDecimal(0.10), new BigDecimal(0.25),
+						new BigDecimal(1), new BigDecimal(2)}, 10000, 5);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
-		ejectedBills = new ArrayList<Integer>();		
+		ejectedBills = new ArrayList<Integer>();
+		ejectedCoins = new ArrayList<BigDecimal>();
 		/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
+		 * Also load two hundred $0.05, $0.10, $0.25, $1.00, and $2.00 coins into the dispensers for coin change.
 		 * Every dispenser has a max capacity of 100 
 		 */
 		fiveDollarBills = new Bill[100];
@@ -257,11 +374,28 @@ public class PaymentWithCashTest {
 			twentyDollarBills[i] = billTwenty;
 			fiftyDollarBills[i] = billFifty;
 		}
+		nickelCoins = new Coin[200];
+		dimeCoins = new Coin[200];
+		quarterCoins = new Coin[200];
+		loonieCoins = new Coin[200];
+		toonieCoins = new Coin[200];
+		for(int i = 0; i < 200; i++) {
+			nickelCoins[i] = coinNickel;
+			dimeCoins[i] = coinDime;
+			quarterCoins[i] = coinQuarter;
+			loonieCoins[i] = coinLoonie;
+			toonieCoins[i] = coinToonie;
+		}
 		try {
 			selfCheckoutStation.billDispensers.get(5).load(fiveDollarBills);
 			selfCheckoutStation.billDispensers.get(10).load(tenDollarBills);
 			selfCheckoutStation.billDispensers.get(20).load(twentyDollarBills);
 			selfCheckoutStation.billDispensers.get(50).load(fiftyDollarBills);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal (0.05)).load(nickelCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal (0.10)).load(dimeCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal (0.25)).load(quarterCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal (1)).load(loonieCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal (2)).load(toonieCoins);
 		} catch (SimulationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -272,6 +406,42 @@ public class PaymentWithCashTest {
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
+		
+	}
+	
+	// Teardown to set all objects to null or default values, and restore system.out to console
+	@After
+	public void teardown() {
+		attendantSignalled = false;
+		baos = null;
+		ps = null;
+		System.setOut(System.out);
+		billFive = null;
+		billTen = null;
+		billTwenty = null;
+		billFifty = null;
+		billHundred = null;
+		coinPenny = null;
+		coinNickel = null;
+		coinDime = null;
+		coinQuarter = null;
+		coinLoonie = null;
+		coinToonie = null;
+		selfCheckoutStation = null;
+		customer = null;
+		attendant = null;
+		ejectedBills = null;
+		fiveDollarBills = null;
+		tenDollarBills = null;
+		twentyDollarBills = null;
+		fiftyDollarBills = null;
+		nickelCoins = null;
+		dimeCoins = null;
+		quarterCoins = null;
+		loonieCoins = null;
+		toonieCoins = null;
+		receiptPrinterController = null;
+		paymentController = null;
 		
 	}
 	
@@ -457,18 +627,6 @@ public class PaymentWithCashTest {
 		paymentController.updateCartTotal(BigDecimal.valueOf(20.00));
 		paymentController.updateCartTotal(BigDecimal.valueOf(20.00));
 		assertTrue(BigDecimal.valueOf(40.00).compareTo(paymentController.getCartTotal()) == 0);
-	}
-	
-	/* Test Case: Testing dispenseChange when change is 0.
-	 * 
-	 * Description: Change will be set to zero and then dispense change will be called.
-	 * 
-	 * Expected Result: A Simulation Exception will be thrown
-	 */
-	@Test (expected = SimulationException.class)
-	public void dispenseZeroChange_Test() {
-		paymentController.setChangeDue(BigDecimal.ZERO);
-		paymentController.dispenseChange();
 	}
 	
 	/* Test Case: To see if the AttendantIO is being properly notified

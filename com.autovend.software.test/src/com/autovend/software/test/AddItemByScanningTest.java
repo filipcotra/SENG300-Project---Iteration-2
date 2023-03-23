@@ -24,6 +24,7 @@ import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
 import com.autovend.Numeral;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.external.ProductDatabases;
@@ -99,6 +100,12 @@ public class AddItemByScanningTest {
 
 		@Override
 		public void showUpdatedTotal(BigDecimal total) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void removeCoin(CoinTray tray) {
 			// TODO Auto-generated method stub
 			
 		}

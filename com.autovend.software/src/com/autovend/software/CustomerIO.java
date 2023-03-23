@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 
 import com.autovend.BarcodedUnit;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 
 /**
  * This interface can be used in testing to simulate customer interactions in certain use cases.
@@ -57,6 +58,12 @@ public interface CustomerIO {
 	 * Simulates the customer removing the bill from the slot
 	 */
 	public void removeBill(BillSlot slot);
+
+	/*
+	 * Simulates the customer removing the coin from the tray
+	 */
+	public void removeCoin(CoinTray tray);
+	
 	
 	/*
 	 * Signals to Customer I/O that the operation is complete and the remaining 

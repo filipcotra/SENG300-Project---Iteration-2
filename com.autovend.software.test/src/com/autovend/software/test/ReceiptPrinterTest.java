@@ -24,6 +24,7 @@ import org.junit.Test;
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.OverloadException;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIO;
@@ -81,6 +82,12 @@ public class ReceiptPrinterTest {
 
 			@Override
 			public void showUpdatedTotal(BigDecimal total) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void removeCoin(CoinTray tray) {
 				// TODO Auto-generated method stub
 				
 			}
