@@ -64,6 +64,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	private List<BigDecimal> coinDenominations;
 	private BigDecimal maxCoinDenom;
 	private BigDecimal minCoinDenom;
+	private BillSlot output;
 	
 	
 	/**
@@ -107,6 +108,8 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.cartTotal = BigDecimal.valueOf(0.0);
 		this.totalChange = BigDecimal.valueOf(0.0);
 		this.changeDue = BigDecimal.valueOf(0.0);
+		this.output = station.billOutput;
+		this.output.register(this);
 	}
 
 /* ------------------------ General Methods --------------------------------------------------*/
@@ -266,7 +269,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 * enables all necessary devices (just CardReader in this case).
 	 */
 	public void enableCardPayment() {
-		this.station.cardReader.enable();
+		this.station.cardReader.enable(); 
 	}
 	
 /* ------------------------ Cash Payment Methods ---------------------------------------------*/	
@@ -342,7 +345,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 				}
 				/** If empty and not the smallest denom, move on. If the smallest denom, inform attendant */
 				catch(EmptyException e) {
-					if(BigDecimal.valueOf(this.denominations[index]).compareTo(this.minDenom) == 0) {
+					if(this.coinDenominations.get(index).compareTo(this.minDenom) == 0) {
 						/** In this case change will be larger than smallest denom but unpayable */
 						this.myAttendant.changeRemainsNoDenom(this.getChangeDue());
 						this.suspendMachine();
