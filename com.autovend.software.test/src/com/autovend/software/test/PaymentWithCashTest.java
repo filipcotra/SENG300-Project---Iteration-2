@@ -463,7 +463,7 @@ public class PaymentWithCashTest {
 		
 	}
 	
-	/* Test Case: Inserting an invalid bill to the self-checkout machine
+	/* Test Case: Inserting an invalid bill denomnination to the self-checkout machine
 	 * 
 	 * Description: "If the customer inserts cash that is deemed unacceptable, 
 	 * this will be returned to the customer without involving the System,
@@ -472,18 +472,103 @@ public class PaymentWithCashTest {
 	 * can accept.
 	 * 
 	 * Expected Result: The bill slot observer should call the 
-	 * reactToBillEjectedEvent method an eject the bill from the machine.
+	 * reactToBillEjectedEvent method and eject the bill from the machine.
+	 * Further, the cart total should remain unchanged.
 	 */
 	@Test
-	public void addInvalidBill_Test() {
+	public void addInvalidBillDenom_Test() {
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		billObserver = new MyBillSlotObserver();
 		try {
 			selfCheckoutStation.billInput.register(billObserver);
 			selfCheckoutStation.billInput.accept(billHundred);
 			assertEquals(selfCheckoutStation.billInput,billObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
 		} catch (DisabledException e) {
 			return;
 		} catch (OverloadException e) {
+			return;
+		}
+	}
+	
+	/* Test Case: Inserting an invalid bill currency to the self-checkout machine
+	 * 
+	 * Description: "If the customer inserts cash that is deemed unacceptable, 
+	 * this will be returned to the customer without involving the System,
+	 * presumably handled in hardware." What I mean by "invalid bill" is
+	 * a bill that does not meet the currency of bills that the machine
+	 * can accept.
+	 * 
+	 * Expected Result: The bill slot observer should call the 
+	 * reactToBillEjectedEvent method and eject the bill from the machine.
+	 * Further, the cart total should remain unchanged.
+	 */
+	@Test
+	public void addInvalidBillCurr_Test() {
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		billObserver = new MyBillSlotObserver();
+		Bill usdBillTwenty = new Bill (20, Currency.getInstance("USD"));
+		try {
+			selfCheckoutStation.billInput.register(billObserver);
+			selfCheckoutStation.billInput.accept(usdBillTwenty);
+			assertEquals(selfCheckoutStation.billInput,billObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
+		} catch (DisabledException e) {
+			return;
+		} catch (OverloadException e) {
+			return;
+		}
+	}
+	
+	/* Test Case: Inserting an invalid coin denomination to the self-checkout machine
+	 * 
+	 * Description: "If the customer inserts cash that is deemed unacceptable, 
+	 * this will be returned to the customer without involving the System,
+	 * presumably handled in hardware." What I mean by "invalid coin" is
+	 * a coin that does not meet the set denominations of coins that the machine
+	 * can accept.
+	 * 
+	 * Expected Result: The coin tray observer should call the 
+	 * reactToCoinAddedEvent method as the invalid coin added falls straight through the slot and validator
+	 * and back to the tray. Further, the cart total should remain unchanged.
+	 */
+	@Test
+	public void addInvalidCoinDenom_Test() {
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		coinObserver = new MyCoinTrayObserver();
+		try {
+			selfCheckoutStation.coinTray.register(coinObserver);
+			selfCheckoutStation.coinSlot.accept(coinPenny);
+			assertEquals(selfCheckoutStation.coinTray,coinObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
+		} catch (DisabledException e) {
+			return;
+		}
+	}
+	
+	/* Test Case: Inserting an invalid coin currency to the self-checkout machine
+	 * 
+	 * Description: "If the customer inserts cash that is deemed unacceptable, 
+	 * this will be returned to the customer without involving the System,
+	 * presumably handled in hardware." What I mean by "invalid coin" is
+	 * a coin that does not meet the currency of coins that the machine
+	 * can accept.
+	 * 
+	 * Expected Result: The coin tray observer should call the 
+	 * reactToCoinAddedEvent method as the invalid coin added falls straight through the slot and validator
+	 * and back to the tray. Further, the cart total should remain unchanged.
+	 */
+	@Test
+	public void addInvalidCoinCurr_Test() {
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		coinObserver = new MyCoinTrayObserver();
+		Coin usdCoinQuarter = new Coin(new BigDecimal(0.25), Currency.getInstance("USD"));
+		try {
+			selfCheckoutStation.coinTray.register(coinObserver);
+			selfCheckoutStation.coinSlot.accept(usdCoinQuarter);
+			assertEquals(selfCheckoutStation.coinTray,coinObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
+		} catch (DisabledException e) {
 			return;
 		}
 	}
