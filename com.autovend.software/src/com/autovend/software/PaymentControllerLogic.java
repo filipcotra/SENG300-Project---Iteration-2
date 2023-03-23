@@ -91,6 +91,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, PrintReceipt printerLogic) {
 		this.station = SCS;
 		this.station.billValidator.register(this);
+		this.station.coinValidator.register(this);
 		this.denominations = station.billDenominations;
 		Arrays.sort(this.denominations);
 		this.maxDenom = BigDecimal.valueOf(Arrays.stream(this.denominations).max().getAsInt());

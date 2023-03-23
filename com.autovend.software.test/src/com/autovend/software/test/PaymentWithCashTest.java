@@ -62,7 +62,8 @@ public class PaymentWithCashTest {
 	PrintReceipt receiptPrinterController;
 	SelfCheckoutStation selfCheckoutStation;
 	MyBillSlotObserver billObserver;
-	MyCoinTrayObserver coinObserver;
+	MyCoinSlotObserver coinSlotObserver;
+	MyCoinTrayObserver coinTrayObserver;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
 	Bill[] fiveDollarBills;
@@ -326,6 +327,33 @@ public class PaymentWithCashTest {
 		
 	}
 	
+	class MyCoinSlotObserver implements CoinSlotObserver{
+
+		public AbstractDevice<? extends AbstractDeviceObserver> device = null;
+		
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToCoinInsertedEvent(CoinSlot slot) {
+			// TODO Auto-generated method stub
+			this.device = slot;
+			
+		}
+		
+	}
+	
 	class MyCoinTrayObserver implements CoinTrayObserver{
 		
 		public AbstractDevice<? extends AbstractDeviceObserver> device = null;
@@ -364,16 +392,16 @@ public class PaymentWithCashTest {
 		billTwenty = new Bill(20, Currency.getInstance("CAD"));
 		billFifty = new Bill(50, Currency.getInstance("CAD"));
 		billHundred = new Bill(100, Currency.getInstance("CAD"));
-		coinPenny = new Coin(new BigDecimal(0.01), Currency.getInstance("CAD"));
-		coinNickel = new Coin(new BigDecimal(0.05), Currency.getInstance("CAD"));
-		coinDime = new Coin(new BigDecimal(0.10), Currency.getInstance("CAD"));
-		coinQuarter = new Coin(new BigDecimal(0.25), Currency.getInstance("CAD"));
-		coinLoonie = new Coin(new BigDecimal(1.00), Currency.getInstance("CAD"));
-		coinToonie = new Coin(new BigDecimal(2.00), Currency.getInstance("CAD"));
+		coinPenny = new Coin(new BigDecimal("0.01"), Currency.getInstance("CAD"));
+		coinNickel = new Coin(new BigDecimal("0.05"), Currency.getInstance("CAD"));
+		coinDime = new Coin(new BigDecimal("0.10"), Currency.getInstance("CAD"));
+		coinQuarter = new Coin(new BigDecimal("0.25"), Currency.getInstance("CAD"));
+		coinLoonie = new Coin(new BigDecimal("1.00"), Currency.getInstance("CAD"));
+		coinToonie = new Coin(new BigDecimal("2.00"), Currency.getInstance("CAD"));
 
 		selfCheckoutStation = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
-				new BigDecimal[] {new BigDecimal(0.05),new BigDecimal(0.10), new BigDecimal(0.25),
-						new BigDecimal(1), new BigDecimal(2)}, 10000, 5);
+				new BigDecimal[] {new BigDecimal("0.05"),new BigDecimal("0.10"), new BigDecimal("0.25"),
+						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
 		ejectedBills = new ArrayList<Integer>();
@@ -409,11 +437,11 @@ public class PaymentWithCashTest {
 			selfCheckoutStation.billDispensers.get(10).load(tenDollarBills);
 			selfCheckoutStation.billDispensers.get(20).load(twentyDollarBills);
 			selfCheckoutStation.billDispensers.get(50).load(fiftyDollarBills);
-			selfCheckoutStation.coinDispensers.get(new BigDecimal (0.05)).load(nickelCoins);
-			selfCheckoutStation.coinDispensers.get(new BigDecimal (0.10)).load(dimeCoins);
-			selfCheckoutStation.coinDispensers.get(new BigDecimal (0.25)).load(quarterCoins);
-			selfCheckoutStation.coinDispensers.get(new BigDecimal (1)).load(loonieCoins);
-			selfCheckoutStation.coinDispensers.get(new BigDecimal (2)).load(toonieCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).load(nickelCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).load(dimeCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).load(quarterCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).load(loonieCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).load(toonieCoins);
 		} catch (SimulationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -535,11 +563,11 @@ public class PaymentWithCashTest {
 	@Test
 	public void addInvalidCoinDenom_Test() {
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
-		coinObserver = new MyCoinTrayObserver();
+		coinTrayObserver = new MyCoinTrayObserver();
 		try {
-			selfCheckoutStation.coinTray.register(coinObserver);
+			selfCheckoutStation.coinTray.register(coinTrayObserver);
 			selfCheckoutStation.coinSlot.accept(coinPenny);
-			assertEquals(selfCheckoutStation.coinTray,coinObserver.device);
+			assertEquals(selfCheckoutStation.coinTray,coinTrayObserver.device);
 			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
 		} catch (DisabledException e) {
 			return;
@@ -561,29 +589,29 @@ public class PaymentWithCashTest {
 	@Test
 	public void addInvalidCoinCurr_Test() {
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
-		coinObserver = new MyCoinTrayObserver();
+		coinTrayObserver = new MyCoinTrayObserver();
 		Coin usdCoinQuarter = new Coin(new BigDecimal(0.25), Currency.getInstance("USD"));
 		try {
-			selfCheckoutStation.coinTray.register(coinObserver);
+			selfCheckoutStation.coinTray.register(coinTrayObserver);
 			selfCheckoutStation.coinSlot.accept(usdCoinQuarter);
-			assertEquals(selfCheckoutStation.coinTray,coinObserver.device);
+			assertEquals(selfCheckoutStation.coinTray,coinTrayObserver.device);
 			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
 		} catch (DisabledException e) {
 			return;
 		}
 	}
 	
-	/* Test Case: An amount less than the cart total is paid. 
+	/* Test Case: An amount less than the cart total is paid via bill.
 	 * 
 	 * Description: The cart total is set at $100. $20 is paid in a single bill. 
 	 * 
-	 * There is no need to test for payments that would require coins, credit, or crypto.
+	 * There is no need to test for payments that would require crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $100 to $80. Checking the amount paid
 	 * should return a string value of "20".
 	 */
 	@Test
-	public void payLessThanTotal_Test() {
+	public void payBillLessThanTotal_Test() {
 		
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		try {
@@ -595,6 +623,27 @@ public class PaymentWithCashTest {
 		}
 		assertTrue(BigDecimal.valueOf(80).compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
+	}
+	
+	/* Test Case: An amount less than the cart total is paid via coin.
+	 * 
+	 * Description: The cart total is set at $100. $2 is paid in a single coin. 
+	 * 
+	 * There is no need to test for payments that would require crypto.
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $80. Checking the amount paid
+	 * should return a string value of "20".
+	 */
+	@Test
+	public void payCoinLessThanTotal_Test() {
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		try {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		}
+		assertTrue(BigDecimal.valueOf(98).compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("2.00",paymentController.getAmountPaid());
 	}
 	
 	/* Test Case: The customer pays with a single bill on two separate instances. 
