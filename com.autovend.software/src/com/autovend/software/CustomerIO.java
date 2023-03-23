@@ -57,8 +57,21 @@ public interface CustomerIO {
 	 * Simulates the customer removing the bill from the slot
 	 */
 	public void removeBill(BillSlot slot);
-
 	
+	/*
+	 * Signals to Customer I/O that the operation is complete and the remaining 
+	 * amount due is reduced.
+	 */
+	public void payWithCreditComplete(BigDecimal amountDue);
 	
+	/*
+	 * Signals to Customer I/O that the operation is complete and the remaining 
+	 * amount due is reduced.
+	 */
+	public void payWithDebitComplete(BigDecimal amountDue);
 	
+	/*
+	 * Simulates getting the pin from the customer
+	 */
+	public String getPin();
 }

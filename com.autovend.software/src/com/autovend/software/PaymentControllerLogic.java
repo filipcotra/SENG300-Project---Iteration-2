@@ -8,6 +8,7 @@
 
 package com.autovend.software;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,11 +19,15 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import com.autovend.Bill;
+import com.autovend.Card;
 import com.autovend.Coin;
+import com.autovend.InvalidPINException;
+import com.autovend.Card.CardData;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.BillValidator;
+import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinDispenser;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.CoinValidator;
@@ -36,6 +41,7 @@ import com.autovend.devices.observers.CoinValidatorObserver;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
 import com.autovend.devices.observers.BillStorageObserver;
+import com.autovend.devices.observers.CardReaderObserver;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.devices.SimulationException;
 
@@ -44,7 +50,8 @@ import com.autovend.devices.SimulationException;
  * 
  * @author Filip Cotra
  */
-public class PaymentControllerLogic implements BillValidatorObserver, BillDispenserObserver, BillSlotObserver, CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver {
+public class PaymentControllerLogic implements BillValidatorObserver, BillDispenserObserver, BillSlotObserver, 
+CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserver {
 	private BigDecimal cartTotal;
 	private BigDecimal changeDue;
 	private SelfCheckoutStation station;
@@ -382,6 +389,88 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		}
 	}
 	
+/* ------------------------ Pay with Credit --------------------------------------------------*/
+	// implements the pay with credit use case. trigger: customer must with to pay with credit
+	public void payCredit(BigDecimal amountPaid, Card card, String pin, BankIO bank) throws IOException {
+		//step 2: enable card reader
+		station.cardReader.enable();
+		//step 3: passing card and PIN to card reader
+		int count = 0;
+		while (true) {
+			try {
+				station.cardReader.insert(card, pin);
+				break;
+			//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
+			} catch (InvalidPINException e) {
+				if (count == 3) {
+					RepeatedBadPin(bank, card);
+					return;
+				}
+				pin = myCustomer.getPin();
+				count++;
+			}
+		}
+		//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
+		//should signal back the hold number
+		int holdNumber = bank.creditCardTranscation(card, amountPaid);
+		//step 8: the system should signal the bank to complete the transaction
+		bank.completeTransaction(holdNumber);
+		//step 10: Reduces the remaining amount due by the amount of the transaction
+		this.updateAmountPaid(amountPaid);
+		this.setCartTotal(this.getCartTotal().subtract(amountPaid));
+		//step 11: Signals to the Card Reader to release the card
+		boolean success = station.cardReader.remove();
+		//step 13: Card reader signals to the System that the operation is complete
+		if (success) {
+			//step 14: Signals to Customer I/O that the operation is complete and the remaining 
+			//amount due is reduced.
+			myCustomer.payWithCreditComplete(this.getCartTotal());
+		}
+	}
+	
+	// implements the pay with debit use case. trigger: customer must with to pay with debit
+		public void payDebit(BigDecimal amountPaid, Card card, String pin, BankIO bank) throws IOException {
+			//step 2: enable card reader
+			station.cardReader.enable();
+			//step 3: passing card and PIN to card reader
+			int count = 0;
+			while (true) {
+				try {
+					station.cardReader.insert(card, pin);
+					break;
+				//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
+				} catch (InvalidPINException e) {
+					if (count == 3) {
+						RepeatedBadPin(bank, card);
+						return;
+					}
+					pin = myCustomer.getPin();
+					count++;
+				}
+			}
+			//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
+			//should signal back the hold number
+			int holdNumber = bank.debitCardTranscation(card, amountPaid);
+			//step 8: the system should signal the bank to complete the transaction
+			bank.completeTransaction(holdNumber);
+			//step 10: Reduces the remaining amount due by the amount of the transaction
+			this.updateAmountPaid(amountPaid);
+			this.setCartTotal(this.getCartTotal().subtract(amountPaid));
+			//step 11: Signals to the Card Reader to release the card
+			boolean success = station.cardReader.remove();
+			//step 13: Card reader signals to the System that the operation is complete
+			if (success) {
+				//step 14: Signals to Customer I/O that the operation is complete and the remaining 
+				//amount due is reduced.
+				myCustomer.payWithDebitComplete(this.getCartTotal());
+			}
+		}
+
+	// implements the repeated bad pin use case. called by pay with credit or pay with debit
+	private void RepeatedBadPin(BankIO bank, Card card) {
+		bank.blockCard(card);
+	}
+	
 /* ------------------------ Observer Overrides -----------------------------------------------*/
 	
 	/* ---------------- Abstract --------------------------------*/
@@ -546,6 +635,31 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	@Override
 	public void reactToInvalidCoinDetectedEvent(CoinValidator validator) {
 		// Ignoring in this iteration
+		
+	}
+	/* ---------------- Card Reader --------------------*/
+	@Override
+	public void reactToCardInsertedEvent(CardReader reader) {
+		
+	}
+	
+	@Override
+	public void reactToCardRemovedEvent(CardReader reader) {
+		
+	}
+	
+	@Override
+	public void reactToCardTappedEvent(CardReader reader) {
+		
+	}
+	
+	@Override
+	public void reactToCardSwipedEvent(CardReader reader) {
+		
+	}
+
+	@Override
+	public void reactToCardDataReadEvent(CardReader reader, CardData data) {
 		
 	}
 }
