@@ -52,10 +52,7 @@ public interface AttendantIO {
 	public void checkAddedOwnBags();
 	
 	/**
-	 * 
-	 * @param choice
-	 * 			Whether or not the attendant accepts the bags
-	 * @return True if bags have been accepted
+	 * Simulates the attendant accepting or rejecting the customer's own bags
 	 */
-	public boolean acceptOwnBags(boolean choice);
+	public void acceptOwnBags();
 }

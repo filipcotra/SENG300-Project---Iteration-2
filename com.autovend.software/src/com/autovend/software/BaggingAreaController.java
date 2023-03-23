@@ -16,8 +16,8 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	CustomerIO customerIO;
 	AttendantIO attendantIO;
 	PaymentControllerLogic paymentController;
-	boolean ownBags = false;
-	boolean bagAccept = false;
+	public boolean ownBags = false;
+	public boolean bagAccept = false;
 	
 	public BaggingAreaController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
 		this.station = station;
@@ -29,7 +29,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	/**
 	 * Helper function to block the system by disabling all devices besides the bagging area.
 	 */
-	private void blockSystem() {
+	public void blockSystem() {
 		this.station.printer.disable();
 		this.station.mainScanner.disable();
 		this.station.handheldScanner.disable();
@@ -42,7 +42,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	/**
 	 * Helper function to unblock the system by enabling all devices besides the bagging area.
 	 */
-	private void unblockSystem() {
+	public void unblockSystem() {
 		this.station.printer.enable();
 		this.station.mainScanner.enable();
 		this.station.handheldScanner.enable();
@@ -82,7 +82,8 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		
 	}
 	
-	public void addOwnBags() {
+	public boolean addOwnBags() {
 			attendantIO.checkAddedOwnBags();
+			return true;
 			}
 	}

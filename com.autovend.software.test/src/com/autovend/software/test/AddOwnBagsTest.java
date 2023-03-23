@@ -1,15 +1,161 @@
 package com.autovend.software.test;
-import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.*;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.math.BigDecimal;
+import java.util.Currency;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.autovend.BarcodedUnit;
 import com.autovend.devices.*;
 
-SelfCheckoutStation station;
-CustomerIO customerIO;
-AttendantIO attendantIO;
-PaymentControllerLogic paymentController;
-
 public class AddOwnBagsTest {
-	BaggingAreaController bag = new BaggingAreaController(station, customerIO, attendantIO, paymentController);
+	SelfCheckoutStation station;
+	AttendantIO attendantIO;
+	CustomerIO customer;
+	PaymentControllerLogic paymentController;
+	PrintReceipt pr;
+	BaggingAreaController bag;
 	
+	class myAttendantIO implements AttendantIO{
+		
+
+	@Override
+	public void notifyWeightDiscrepancyAttendantIO() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean approveWeightDiscrepancy() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void changeRemainsNoDenom(BigDecimal changeLeft) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void printDuplicateReceipt() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void checkAddedOwnBags() {
+		bag.blockSystem();
+		acceptOwnBags();
+	}
+
+	@Override
+	public void acceptOwnBags() {
+		if (bag.bagAccept) {
+			bag.unblockSystem();
+			bag.ownBags = true;
+		}
+		else {
+			throw new DisabledException();
+		}
+	}
+	}
 	
+	class myCustomerIO implements CustomerIO{
+
+		@Override
+		public void scanItem(BarcodedUnit item) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyPlaceItemCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void placeScannedItemInBaggingArea(BarcodedUnit item) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void showUpdatedTotal(BigDecimal total) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void thankCustomer() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void removeBill(BillSlot slot) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void enterMembershipNumber() {
+			// TODO Auto-generated method stub
+			
+		}
+	}
+
+
+@Before
+public void setup() {
+	station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20}, 
+			new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
+	attendantIO = new myAttendantIO();
+	customer = new myCustomerIO();
+	pr = new PrintReceipt(station, station.printer, customer, attendantIO);
+	paymentController = new PaymentControllerLogic(station, customer, attendantIO, pr);
+	bag = new BaggingAreaController(station, customer, attendantIO, paymentController);
 }
+
+@After
+public void tearDown() {
+	station = null;
+	attendantIO = null;
+	customer = null;
+	pr = null;
+	paymentController = null;
+	bag = null;
+}
+@Test
+public void bagsAccepted() {
+	bag.bagAccept = true;
+	assertTrue(bag.addOwnBags());
+}
+
+@Test ()
+public void bagsReject() {
+	bag.bagAccept = false;
+	try {
+		boolean accepted = bag.addOwnBags();
+	}
+	catch(DisabledException de) {
+		return;
+	}
+	fail("DisabledException expected");
+}
+}
+
+
