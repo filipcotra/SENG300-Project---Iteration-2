@@ -57,7 +57,8 @@ import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
 
 public class PaymentWithCashTest {
-
+	
+	// Create variables to be used
 	PaymentControllerLogic paymentController;
 	PrintReceipt receiptPrinterController;
 	SelfCheckoutStation selfCheckoutStation;
@@ -491,7 +492,7 @@ public class PaymentWithCashTest {
 		
 	}
 	
-	/* Test Case: Inserting an invalid bill denomnination to the self-checkout machine
+	/* Test Case: Inserting an invalid bill denomination to the self-checkout machine
 	 * 
 	 * Description: "If the customer inserts cash that is deemed unacceptable, 
 	 * this will be returned to the customer without involving the System,
@@ -605,8 +606,6 @@ public class PaymentWithCashTest {
 	 * 
 	 * Description: The cart total is set at $100. $20 is paid in a single bill. 
 	 * 
-	 * There is no need to test for payments that would require crypto.
-	 * 
 	 * Expected Result: The cart total should drop from $100 to $80. Checking the amount paid
 	 * should return a string value of "20".
 	 */
@@ -628,8 +627,6 @@ public class PaymentWithCashTest {
 	/* Test Case: An amount less than the cart total is paid via coin.
 	 * 
 	 * Description: The cart total is set at $100. $2 is paid in a single coin. 
-	 * 
-	 * There is no need to test for payments that would require crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $100 to $80. Checking the amount paid
 	 * should return a string value of "20".
@@ -653,15 +650,13 @@ public class PaymentWithCashTest {
 	 * 
 	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
 	 * either the cart total or the amount paid.
-	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $100 to $80. Then it should drop 
 	 * to $75 on the second bill insertion. Checking the amount paid should return a string
 	 * value of "20", then after the second bill insertion update to a string value of "25".
 	 */
 	@Test
-	public void payTwice() {
+	public void payTwiceBills() {
 		
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		try {
@@ -682,21 +677,119 @@ public class PaymentWithCashTest {
 		}
 	}
 	
+	/* Test Case: The customer pays with a single coin on two separate instances. 
+	 * 
+	 * Description: The cart total is set at $100. $1 is paid in a single coin and
+	 * then $0.10 dollars is paid in a single coin. 
+	 * 
+	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
+	 * either the cart total or the amount paid.
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $80. Then it should drop 
+	 * to $75 on the second bill insertion. Checking the amount paid should return a string
+	 * value of "20", then after the second bill insertion update to a string value of "25".
+	 */
+	@Test
+	public void payTwiceCoins() {
+		
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		try {
+			// The customer first inserts a $1 coin (loonie) into the coin slot.
+			selfCheckoutStation.coinSlot.accept(coinLoonie);
+			assertTrue(BigDecimal.valueOf(99.00).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("1.00",paymentController.getAmountPaid());
+			
+			// The customer then inserts a $0.10 coin (dime) into the coin slot.
+			selfCheckoutStation.coinSlot.accept(coinDime);
+			assertTrue(BigDecimal.valueOf(98.90).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("1.10",paymentController.getAmountPaid());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		} 
+	}
+	
+	/* Test Case: The customer pays with a single coin followed by a single bill. 
+	 * 
+	 * Description: The cart total is set at $100. $0.25 is paid in a single coin and
+	 * then $50 dollars is paid in a single bill. 
+	 * 
+	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
+	 * either the cart total or the amount paid when mixing payment methods
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $99.75. Then it should drop 
+	 * to $49.75 on the second payment insertion. Checking the amount paid should return a string
+	 * value of "0.25", then after the second payment insertion update to a string value of "50.25".
+	 */
+	@Test
+	public void payTwiceCoinThenBill() {
+		
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		try {
+			// The customer first inserts a $0.25 coin (quarter) into the coin slot.
+			selfCheckoutStation.coinSlot.accept(coinQuarter);
+			assertTrue(BigDecimal.valueOf(99.75).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("0.25",paymentController.getAmountPaid());
+			
+			// The customer then inserts a 50 dollar bill into the bill slot.
+			selfCheckoutStation.billInput.accept(billFifty);
+			assertTrue(BigDecimal.valueOf(49.75).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("50.25",paymentController.getAmountPaid());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		} catch (OverloadException e) {
+			fail("An OverloadException should not have been thrown");
+		}
+	}
+	
+	/* Test Case: The customer pays with a single bill followed by a single coin. 
+	 * 
+	 * Description: The cart total is set at $100. $10 is paid in a single bill and
+	 * then $2 dollar is paid in a single coin. 
+	 * 
+	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
+	 * either the cart total or the amount paid when mixing payment methods
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $90. Then it should drop 
+	 * to $88 on the second payment insertion. Checking the amount paid should return a string
+	 * value of "10", then after the second payment insertion update to a string value of "12".
+	 */
+	@Test
+	public void payTwiceBillThenCoin() {
+		
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		try {
+			// The customer first inserts a ten dollar bill into the bill slot.
+			selfCheckoutStation.billInput.accept(billTen);
+			assertTrue(BigDecimal.valueOf(90).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("10.0",paymentController.getAmountPaid());
+			
+			// The customer then inserts a $2 coin (toonie) into the coin slot.
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+			assertTrue(BigDecimal.valueOf(88).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("12.00",paymentController.getAmountPaid());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		} catch (OverloadException e) {
+			fail("An OverloadException should not have been thrown");
+		}
+	}
+	
 	/* Test Case: The customer pays exactly the total cart amount. 
 	 * 
 	 * Description: The cart total is set at $50. $50 is paid in a single bill.
 	 * 
 	 * There shouldn't be a need to test this with multiple instances of paying with cash
 	 * as the previous test had covered any weird behaviors that could have occurred.
-	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $50 to $0. 
 	 * Checking the amount paid should return a string value of "50".
 	 * Checking the total change should return a string value of be "0.00'.
 	 */
 	@Test
-	public void payFullNoChange() {
+	public void payFullBillNoChange() {
 		
 		paymentController.setCartTotal(BigDecimal.valueOf(50.00));
 		try {
@@ -711,6 +804,33 @@ public class PaymentWithCashTest {
 		} catch (OverloadException e) {
 			fail("An OverloadException should not have been thrown");
 		} 
+	}
+	
+	/* Test Case: The customer pays exactly the total cart amount. 
+	 * 
+	 * Description: The cart total is set at $0.05. $0.05 is paid in a single nickel.
+	 * 
+	 * There shouldn't be a need to test this with multiple instances of paying with cash
+	 * as the previous test had covered any weird behaviors that could have occurred.
+	 * 
+	 * Expected Result: The cart total should drop from $0.05 to $0. 
+	 * Checking the amount paid should return a string value of "0.05".
+	 * Checking the total change should return a string value of be "0.00'.
+	 */
+	@Test
+	public void payFullCoinNoChange() {
+		
+		paymentController.setCartTotal(BigDecimal.valueOf(0.05));
+		try {
+			// The customer pays the full $0.05 using a single nickel.
+			selfCheckoutStation.coinSlot.accept(coinNickel);
+			assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("0.05",paymentController.getAmountPaid());
+			assertEquals("0.00",paymentController.getTotalChange());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		}
 	}
 	
 	/* Test Case: The customer pays over the total cart amount. 
