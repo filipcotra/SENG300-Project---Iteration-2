@@ -30,6 +30,7 @@ import com.autovend.Numeral;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.OverloadException;
 import com.autovend.devices.SelfCheckoutStation;
@@ -125,6 +126,12 @@ class MyCustomerIO implements CustomerIO {
 
 	@Override
 	public void showUpdatedTotal(BigDecimal bigDecimal) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removeCoin(CoinTray tray) {
 		// TODO Auto-generated method stub
 		
 	}
