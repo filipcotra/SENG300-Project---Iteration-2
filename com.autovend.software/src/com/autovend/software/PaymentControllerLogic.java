@@ -281,16 +281,27 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		}
 	}
 	
+	
+	/*
+	 * Verifies if the membership number entered by the customer is valid before adding it to the session
+	 */
 	public void addMembershipNumber() {
-		this.membership = myCustomer.getMembershipNumber();
-		boolean validMembership = true;
-		for (int i = 0; i < this.membership.length(); i++) {
-			if (!Character.isDigit(this.membership.charAt(i))) {
+		String membershipInput = myCustomer.getMembershipNumber(); // Gets value entered by customer
+		boolean validMembership = true; // Boolean to decide if the membership number is valid
+		
+		// Loop to check if each character in the membership input string is a digit
+		for (int i = 0; i < membershipInput.length(); i++) {
+			if (!Character.isDigit(membershipInput.charAt(i))) { 	// If the input string contains something that is not a digit, 
+																	// then it is not a valid membership
 				validMembership = false;
 			}
 		}
+		
+		// If bad membership
 		if (!validMembership) {
-			myCustomer.notifyBadMembershipNumberCustomerIO();
+			myCustomer.notifyBadMembershipNumberCustomerIO(); // Notify customer that the membership number is bad
+		} else { // If valid membership
+			this.membership = membershipInput; // Add membership number to the session
 		}
 	}
 	
