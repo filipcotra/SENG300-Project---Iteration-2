@@ -91,6 +91,24 @@ public class ReceiptPrinterTest {
 				// TODO Auto-generated method stub
 				
 			}
+
+			@Override
+			public void payWithCreditComplete(BigDecimal amountDue) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void payWithDebitComplete(BigDecimal amountDue) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public String getPin() {
+				// TODO Auto-generated method stub
+				return null;
+			}
 		
 		}
 	
