@@ -131,7 +131,11 @@ public class AddItemByScanningController implements BarcodeScannerObserver, Elec
 		// Calculating the expected weight of the bagging area (Step 4)
 		double weight = product.getExpectedWeight();
 		try {
-			this.expectedWeight = this.station.baggingArea.getCurrentWeight() + weight;
+			if (weight > station.baggingArea.getSensitivity()) {	// check if the expected weight to be added to bagging area would be detected by scale
+				this.expectedWeight = this.station.baggingArea.getCurrentWeight() + weight; // if expected weight to be added is greater than sensitivity, update expectedWeight of scale
+			} else { 	// if weight to be added won't be detected, unblock system
+				this.unblockSystem();
+			}
 		} catch (OverloadException e) {
 			e.printStackTrace();
 		}

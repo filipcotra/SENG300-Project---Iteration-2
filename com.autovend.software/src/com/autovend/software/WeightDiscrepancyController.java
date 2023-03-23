@@ -14,7 +14,9 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	PaymentControllerLogic paymentController;
 	double expectedWeight; // The expected weight of the self checkout station when an item is scanned
 	double actualWeight; // The actual weight of the self checkout station when an item is scanned
+	public CustomerIOTempPurchaseOwnBags customerIOTemp;
 	public boolean weightDiscrepancy = false;
+	public boolean purchasingBags;
 	
 	public WeightDiscrepancyController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
 		this.station = station;
@@ -78,24 +80,37 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	@Override
 	public void reactToWeightChangedEvent(ElectronicScale scale, double weightInGrams) {
 		// TODO Auto-generated method stub
+		this.blockSystem();		// block system when a weight change is detected
 		this.actualWeight = weightInGrams;
 		if (actualWeight != this.expectedWeight) {
 			weightDiscrepancy = true;
 			// Step 1. Block self checkout system (already done)
 			// Step 2. Notify CustomerIO
+			customerIO.notifyWeightDiscrepancyCustomerIO();
 			// Step 3. Notify Attendant
+			attendantIO.notifyWeightDiscrepancyAttendantIO();
 			// Step 4. Attendant approves discrepancy
 			// Attendant interaction required: attendantIO.approveWeightDiscrepancy()
 			if (attendantIO.approveWeightDiscrepancy()) {
-				this.unblockSystem(); // Unblock the system (Step 7)
+				this.unblockSystem(); // Unblock the system
+				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
 			}
 			// If they don't approve, then remain blocked
 			else {
 				this.blockSystem();
 			}
 		} else { // If there is no discrepancy then unblock the system
+			if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
+				this.finishedPurchasingBags();
+			}
 			this.unblockSystem(); // Step 7, unblock the system 
 		}
+	}
+	
+	public void finishedPurchasingBags() {
+		purchasingBags = false;
+		customerIOTemp.signalFinishedPurchasingBags();
+		customerIOTemp.signalReadyForInteraction();
 	}
 
 	@Override

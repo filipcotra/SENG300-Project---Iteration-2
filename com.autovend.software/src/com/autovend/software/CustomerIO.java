@@ -32,6 +32,12 @@ public interface CustomerIO {
 	public void notifyPlaceItemCustomerIO();
 	
 	/**
+	 * Simulates the customer receiving a signal from the system about the weight of the scale
+	 * not matching the expected weight when an item was placed
+	 */
+	public void notifyWeightDiscrepancyCustomerIO();
+	
+	/**
 	 * Simulates a customer placing their scanned item in the bagging area.
 	 * This interaction is on Step 5 of add item by scanning.
 	 */
