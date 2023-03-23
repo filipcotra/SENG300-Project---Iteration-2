@@ -67,6 +67,16 @@ public interface CustomerIO {
 	/**
 	 * Simulates the customer wanting to add their membership number to the transaction
 	 */
-	public void enterMembershipNumber();
+	public String getMembershipNumber();
 	
+	/**
+	 * Simulates the customer wishing to cancel inputting their membership number
+	 * @return
+	 */
+	public boolean cancelMembershipInput();
+	
+	/**
+	 * Signals to the customer that the membership number entered was invalid
+	 */
+	public void notifyBadMembershipNumberCustomerIO();
 }

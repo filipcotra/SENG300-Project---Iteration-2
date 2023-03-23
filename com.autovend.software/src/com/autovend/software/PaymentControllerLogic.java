@@ -53,6 +53,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	private BigDecimal amountPaid;
 	private BigDecimal totalChange;
 	private BillSlot output;
+	private String membership;
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -89,6 +90,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.cartTotal = BigDecimal.valueOf(0.0);
 		this.totalChange = BigDecimal.valueOf(0.0);
 		this.changeDue = BigDecimal.valueOf(0.0);
+		this.membership = "";
 	}
 
 	/**
@@ -276,6 +278,19 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 			else {
 				this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 			}
+		}
+	}
+	
+	public void addMembershipNumber() {
+		this.membership = myCustomer.getMembershipNumber();
+		boolean validMembership = true;
+		for (int i = 0; i < this.membership.length(); i++) {
+			if (!Character.isDigit(this.membership.charAt(i))) {
+				validMembership = false;
+			}
+		}
+		if (!validMembership) {
+			myCustomer.notifyBadMembershipNumberCustomerIO();
 		}
 	}
 	
