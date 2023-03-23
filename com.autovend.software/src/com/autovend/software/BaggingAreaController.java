@@ -17,6 +17,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	AttendantIO attendantIO;
 	PaymentControllerLogic paymentController;
 	boolean ownBags = false;
+	boolean bagAccept = false;
 	
 	public BaggingAreaController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
 		this.station = station;
@@ -83,6 +84,5 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	
 	public void addOwnBags() {
 			attendantIO.checkAddedOwnBags();
-			ownBags = true;
 			}
 	}

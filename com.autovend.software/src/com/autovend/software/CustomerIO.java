@@ -62,8 +62,5 @@ public interface CustomerIO {
 	 * Simulates the customer wanting to add their membership number to the transaction
 	 */
 	public void enterMembershipNumber();
-
-	
-	
 	
 }
