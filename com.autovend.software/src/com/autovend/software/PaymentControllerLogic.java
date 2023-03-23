@@ -345,7 +345,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 				}
 				/** If empty and not the smallest denom, move on. If the smallest denom, inform attendant */
 				catch(EmptyException e) {
-					if(this.coinDenominations.get(index).compareTo(this.minDenom) == 0) {
+					if(this.coinDenominations.get(index).compareTo(this.minCoinDenom) == 0) {
 						/** In this case change will be larger than smallest denom but unpayable */
 						this.myAttendant.changeRemainsNoDenom(this.getChangeDue());
 						this.suspendMachine();
