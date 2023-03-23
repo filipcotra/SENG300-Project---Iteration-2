@@ -71,4 +71,9 @@ public interface CustomerIOTempPurchaseOwnBags extends CustomerIO{
 	 */
 	public void signalReadyForInteraction();
 	
+	/**
+	 * A signal from the station to Customer IO, notifying the customer to put the purchased bags on the bagging area.
+	 */
+	public void signalPutPurchasedBagsOnBaggingArea();
+	
 }

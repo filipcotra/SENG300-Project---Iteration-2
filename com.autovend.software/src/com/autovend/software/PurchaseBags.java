@@ -18,9 +18,9 @@ public class PurchaseBags implements ElectronicScaleObserver{
 	public CustomerIOTempPurchaseOwnBags customerIO;
 	public AttendantIOTempPurchaseOwnBags attendantIO;
 	public PaymentControllerLogic paymentController;
-	double expectedWeight; // The expected weight of the self checkout station when an item is scanned
+	public double expectedWeight; // The expected weight of the self checkout station when an item is scanned
 	
-	public double REUSABLE_BAG_WEIGHT = 0.2;
+	public double REUSABLE_BAG_WEIGHT = 5;
 	public BigDecimal REUSABLE_BAG_COST = new BigDecimal(4.99);
 	
 	public boolean purchasingBags;
@@ -61,21 +61,28 @@ public class PurchaseBags implements ElectronicScaleObserver{
 	/**
 	 * This function will handle purchasing a certain amount of reusable bags. These bags will
 	 * be added to the Customer's bill. The bags will also be added to the expected weight of the bagging area.
-	 * The BagDispenser will also be signaled to dispense bags.
+	 * Due to miscommunication with the hardware department, the simulation does not have anything related
+	 * to the Bag Dispenser. Therefore a signal to the CustomerIO will be sent instead.
+	 * 
+	 * An IllegalArgumentException will be thrown if the quantity is less than 1. A Customer should not be able to purchase zero or a negative number of bags.
 	 * 
 	 * @param quantity
-	 * 		The number of bags to purchase.
+	 * 		The number of bags to purchase. Must be at least one.
 	 */
 	public void purchaseBags(int quantity) {
+		if(quantity < 1) {
+			throw new IllegalArgumentException("Number of bags should not be less than 1.");
+		}
 		for(int i = 0; i < quantity; i++) {
 			this.paymentController.updateCartTotal(REUSABLE_BAG_COST);
 			this.paymentController.updateItemCostList("Reusable Bag", REUSABLE_BAG_COST.toString());
 			this.expectedWeight += REUSABLE_BAG_WEIGHT;
 		}
 		purchasingBags = true;
-		//Signal Bag Dispenser Here
 		
-		//Signal for a weight discrepancy check
+		//Signal to CustomerIO will be sent to notify customer to put the purchased bags in the bagging area.
+		customerIO.signalPutPurchasedBagsOnBaggingArea();
+		
 	}
 	
 	/**
