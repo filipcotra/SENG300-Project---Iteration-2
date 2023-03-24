@@ -19,10 +19,12 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import com.autovend.Bill;
+import com.autovend.BlockedCardException;
 import com.autovend.Card;
 import com.autovend.Coin;
 import com.autovend.InvalidPINException;
 import com.autovend.Card.CardData;
+import com.autovend.ChipFailureException;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
@@ -399,19 +401,23 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		//step 2: enable card reader
 		station.cardReader.enable();
 		//step 3: passing card and PIN to card reader
-		int count = 0;
 		while (true) {
 			try {
 				station.cardReader.insert(card, pin);
 				break;
-			//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
+			//if the pin is entered wrong, retry
 			} catch (InvalidPINException e) {
-				if (count == 3) {
-					RepeatedBadPin(bank, card);
-					return;
-				}
+				station.cardReader.remove();
 				pin = myCustomer.getPin();
-				count++;
+			//random probability of failure, just retry
+			} catch (ChipFailureException e1) {
+				station.cardReader.remove();
+				continue;
+			//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
+			} catch (BlockedCardException e2) {
+				RepeatedBadPin(bank, card);
+				station.cardReader.disable();
+				return;
 			}
 		}
 		//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
@@ -430,6 +436,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 			//amount due is reduced.
 			myCustomer.payWithCreditComplete(this.getCartTotal());
 		}
+		station.cardReader.disable();
 	}
 	
 	// implements the pay with debit use case. trigger: customer must with to pay with debit
@@ -437,19 +444,23 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 			//step 2: enable card reader
 			station.cardReader.enable();
 			//step 3: passing card and PIN to card reader
-			int count = 0;
 			while (true) {
 				try {
 					station.cardReader.insert(card, pin);
 					break;
-				//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
+				//if the pin is entered wrong, retry
 				} catch (InvalidPINException e) {
-					if (count == 3) {
-						RepeatedBadPin(bank, card);
-						return;
-					}
+					station.cardReader.remove();
 					pin = myCustomer.getPin();
-					count++;
+				//random probability of failure, just retry
+				} catch (ChipFailureException e1) {
+					station.cardReader.remove();
+					continue;
+				//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
+				} catch (BlockedCardException e2) {
+					RepeatedBadPin(bank, card);
+					station.cardReader.disable();
+					return;
 				}
 			}
 			//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
@@ -468,6 +479,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 				//amount due is reduced.
 				myCustomer.payWithDebitComplete(this.getCartTotal());
 			}
+			station.cardReader.disable();
 		}
 
 	// implements the repeated bad pin use case. called by pay with credit or pay with debit
