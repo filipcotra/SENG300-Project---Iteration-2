@@ -1,6 +1,7 @@
 package com.autovend.software.test;
 import com.autovend.software.*;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -106,7 +107,7 @@ public class AddOwnBagsTest {
 		}
 
 		@Override
-		public void removeBill(BillSlot slot) {
+		public void removeBustomerIndicatedToContinueAill(BillSlot slot) {
 			// TODO Auto-generated method stub
 			
 		}
@@ -116,6 +117,7 @@ public class AddOwnBagsTest {
 			// TODO Auto-generated method stub
 			
 		}
+		
 	}
 
 
@@ -124,7 +126,7 @@ public void setup() {
 	station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20}, 
 			new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 	attendantIO = new myAttendantIO();
-	customer = new myCustomerIO();
+	customer = new customermyCustomerIO();
 	pr = new PrintReceipt(station, station.printer, customer, attendantIO);
 	paymentController = new PaymentControllerLogic(station, customer, attendantIO, pr);
 	bag = new BaggingAreaController(station, customer, attendantIO, paymentController);
@@ -139,23 +141,53 @@ public void tearDown() {
 	paymentController = null;
 	bag = null;
 }
+
 @Test
 public void bagsAccepted() {
 	bag.bagAccept = true;
 	assertTrue(bag.addOwnBags());
+	assertTrue(bag.ownBags);
 }
 
-@Test ()
-public void bagsReject() {
-	bag.bagAccept = false;
-	try {
-		boolean accepted = bag.addOwnBags();
+	@Test ()
+	public void bagsReject() {
+		bag.bagAccept = false;
+		try {
+			boolean accepted = bag.addOwnBags();
+		}
+		catch(DisabledException de) {
+			return;
+		}
+		fail("DisabledException expected");
 	}
-	catch(DisabledException de) {
-		return;
+	
+
+	@Test
+	public void wasSystemBlockedAfterFinishedAddingOwnBagsTest() {
+		bag.blockSystem();
+		assertTrue(station.printer.isDisabled());
+		assertTrue(station.mainScanner.isDisabled());
+		assertTrue(station.handheldScanner.isDisabled());
+		assertTrue(station.billInput.isDisabled());
+		assertTrue(station.billOutput.isDisabled());
+		assertTrue(station.billStorage.isDisabled());
+		assertTrue(station.billValidator.isDisabled());
+		
 	}
-	fail("DisabledException expected");
-}
+
+	
+	@Test
+	public void wasSystemUnblockedAfterAttendantApproveOrDenyAddedBagsTest() {
+		attendantIO.checkAddedOwnBags();
+		assertFalse(station.printer.isDisabled());
+		assertFalse(station.mainScanner.isDisabled());
+		assertFalse(station.handheldScanner.isDisabled());
+		assertFalse(station.billInput.isDisabled());
+		assertFalse(station.billOutput.isDisabled());
+		assertFalse(station.billStorage.isDisabled());
+		assertFalse(station.billValidator.isDisabled());
+	}
+
 }
 
 
