@@ -38,4 +38,19 @@ public interface AttendantIO {
 	 * attendant will also be informed that the station needs maintenance.
 	 */
 	public void printDuplicateReceipt();
+
+
+	/*
+	 * Simulates informing the attendant that the printer is low on ink
+	 * This occurs after printing is completed.
+	 * The system is then suspended and the attendant will refill the ink
+	 */
+	public void acknowledgeLowInk();
+
+	/*
+	 * Simulates informing the attendant that the printer is low on paper
+	 * This occurs after printing is completed.
+	 * The system is then suspended and the attendant will refill the paper
+	 */
+	public void acknowledgeLowPaper();
 }

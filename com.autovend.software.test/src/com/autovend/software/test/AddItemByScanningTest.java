@@ -126,6 +126,16 @@ public class AddItemByScanningTest {
 			
 		}
 
+		@Override
+		public void acknowledgeLowInk() {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public void acknowledgeLowPaper() {
+			// TODO Auto-generated method stub
+		}
+
 	}
 	/**
 	 * An example setup that runs a normal execution of the use case

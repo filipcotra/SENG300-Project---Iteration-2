@@ -105,6 +105,16 @@ public class ReceiptPrinterTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public void acknowledgeLowInk() {
+			System.out.println("Attendant notified of low ink");
+		}
+
+		@Override
+		public void acknowledgeLowPaper() {
+			System.out.println("Attendant notified of low paper");
+		}
 	}
 	
 	@Before
