@@ -208,9 +208,11 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 				this.printer.print(ch);
 				if (ch == '\n'){
 					paperRemaining -=1;
+				} else {
+					inkRemaining -=1;
 				}
-				inkRemaining -=1;
-
+				lowPaper();
+				lowInk();
 			} catch (Exception e) {
 				throw e;
 			}

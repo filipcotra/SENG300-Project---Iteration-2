@@ -147,6 +147,7 @@ public class ReceiptPrinterTest {
 		try {
 			selfCheckoutStation.printer.addInk(1048576);
 			selfCheckoutStation.printer.addPaper(1024);
+			receiptPrinterController.setContents(1048576, 1024);
 		} catch (OverloadException e) {}
 		change = "0.00";
 		amountPaid = "75.00";
