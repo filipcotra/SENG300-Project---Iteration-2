@@ -35,6 +35,12 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	char[] paidChars = { 'P', 'a', 'i', 'd', ':', ' ', '$' };
 	char[] changeChars = { 'C', 'h', 'a', 'n', 'g', 'e', ':', ' ', '$' };
 	char[] priceSpace = { ' ', ' ', ' ', ' ', ' ', ' ', '$' };
+	int initialInk;
+	int initialPaper;
+	int inkRemaining;
+	int paperRemaining;
+	boolean lowPaper = false;
+	boolean lowInk = false;
 
 	/**
 	 * Initialize a printer for the Print Receipt use case. Also registers this
@@ -200,6 +206,11 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		if (!(this.flagPaper == false || this.flagInk == false)) {
 			try {
 				this.printer.print(ch);
+				if (ch == '\n'){
+					paperRemaining -=1;
+				}
+				inkRemaining -=1;
+
 			} catch (Exception e) {
 				throw e;
 			}
@@ -209,7 +220,31 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 
-	
+
+	/*
+	 * Method to store the amount of ink and paper in the printer so the software can estimate when ink/paper is low
+	 */
+	public void setContents(int ink, int paper){
+		this.initialInk += ink;
+		this.initialPaper += paper;
+		this.inkRemaining += ink;
+		this.paperRemaining += paper;
+	}
+
+
+	public void lowPaper(){
+		if (paperRemaining < initialPaper/10){
+			this.lowPaper = true;
+		}
+	}
+
+	public void lowInk(){
+		if (inkRemaining < initialInk/10){
+			this.lowInk = true;
+		}
+	}
+
+
 	// Implement methods from the ReceiptPrinterObserver interface
 
 	/**
