@@ -107,12 +107,6 @@ public class AddOwnBagsTest {
 		}
 
 		@Override
-		public void removeBustomerIndicatedToContinueAill(BillSlot slot) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
 		public String getMembershipNumber() {
 			// TODO Auto-generated method stub
 			return null;
@@ -129,6 +123,12 @@ public class AddOwnBagsTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public void removeBill(BillSlot slot) {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 
@@ -138,7 +138,7 @@ public void setup() {
 	station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20}, 
 			new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 	attendantIO = new myAttendantIO();
-	customer = new customermyCustomerIO();
+	customer = new myCustomerIO();
 	pr = new PrintReceipt(station, station.printer, customer, attendantIO);
 	paymentController = new PaymentControllerLogic(station, customer, attendantIO, pr);
 	bag = new BaggingAreaController(station, customer, attendantIO, paymentController);
@@ -190,6 +190,7 @@ public void bagsAccepted() {
 	
 	@Test
 	public void wasSystemUnblockedAfterAttendantApproveOrDenyAddedBagsTest() {
+		bag.bagAccept = true;
 		attendantIO.checkAddedOwnBags();
 		assertFalse(station.printer.isDisabled());
 		assertFalse(station.mainScanner.isDisabled());
