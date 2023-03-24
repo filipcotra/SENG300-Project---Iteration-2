@@ -45,7 +45,7 @@ import com.autovend.software.AttendantIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
-import com.autovend.software.test.PaymentWithCashTest.DispenserStub;
+import com.autovend.software.test.PaymentWithCashTest.BillDispenserStub;
 import com.autovend.software.test.PaymentWithCashTest.MyAttendantIO;
 import com.autovend.software.test.PaymentWithCashTest.MyBillSlotObserver;
 import com.autovend.software.test.PaymentWithCashTest.MyCustomerIO;
@@ -70,7 +70,7 @@ public class AllTogether {
 	Bill billFifty;
 	Bill billHundred;
 	ArrayList<Integer> ejectedBills; 
-	DispenserStub billObserverStub;
+	BillDispenserStub billObserverStub;
 	final PrintStream originalOut = System.out;
 	ByteArrayOutputStream baos;
 	PrintStream ps;

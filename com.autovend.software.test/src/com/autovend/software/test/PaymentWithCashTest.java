@@ -82,7 +82,7 @@ public class PaymentWithCashTest {
 	Bill billFifty;
 	Bill billHundred;
 	ArrayList<Integer> ejectedBills; 
-	DispenserStub billObserverStub;
+	BillDispenserStub billObserverStub;
 	Coin[] nickelCoins;
 	Coin[] dimeCoins;
 	Coin[] quarterCoins;
@@ -106,7 +106,7 @@ public class PaymentWithCashTest {
 
 /* ---------------------------------- Stubs ---------------------------------------------------*/
 	
-	class DispenserStub implements BillDispenserObserver {
+	class BillDispenserStub implements BillDispenserObserver {
 
 		@Override
 		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
@@ -937,15 +937,13 @@ public class PaymentWithCashTest {
 	 * 
 	 * There shouldn't be a need to test this with multiple instances of paying with cash
 	 * as the previous test had covered any weird behaviors that could have occurred.
-	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $10 to $0. 
 	 * Checking the amount paid should return a string value of "50".
 	 * Checking the total change should return a string value of be "40.00".
 	 */
 	@Test
-	public void payFullWithChange_Test(){
+	public void payFullBillWithChange_Test(){
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(10.00));
 		try {
@@ -964,22 +962,53 @@ public class PaymentWithCashTest {
 			fail("An OverloadException should not have been thrown");
 		} 
 	}
+	
+	/* Test Case: The customer pays over the total cart amount. 
+	 * 
+	 * Description: The cart total is set at $1.75 and $2 is paid in a coin.
+	 * 
+	 * There shouldn't be a need to test this with multiple instances of paying with cash
+	 * as the previous test had covered any weird behaviors that could have occurred.
+	 * 
+	 * Expected Result: The cart total should drop from $1.75 to $0. 
+	 * Checking the amount paid should return a string value of "2".
+	 * Checking the total change should return a string value of be "0.25".
+	 */
+	@Test
+	public void payFullCoinWithChange_Test(){
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		paymentController.setCartTotal(BigDecimal.valueOf(1.75));
+		try {
+			// The customer pays the full balance using a single toonie ($2).
+			System.out.println("Payment: " + coinToonie.getValue());
+			while(coinFalseNegative) {
+				selfCheckoutStation.coinSlot.accept(coinToonie);
+			}
+			assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("2.00",paymentController.getAmountPaid());
+			assertEquals("0.25",paymentController.getTotalChange());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		}
+	}
 
-	/* Test Case: The customer pays over the total cart amount by 30 dollars and the total change is dispensed. 
+	/* Test Case: The customer pays over the total cart amount with a bill by 30 dollars and 
+	 * the total change in bills only is dispensed. 
 	 * 
 	 * Description: The cart total is set at $20. $50 is paid in a single bill.
 	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
-	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
+	 * Whether or not the cart Total is dropping has been tested already. So it's not tested here.
 	 * 
 	 * Expected Result: The total change is calculated to 50-20 = 30
 	 * Checking the total change should return a string value of "30.0".
 	 * Checking the change due should return a double value of be "0.0" which is converted to string.
+	 * The ejected bills should be $20 and $10, which is stored as an array converted to string.
 	 */
 	@Test
-	public void totalChangeDueThirtyDollars_Test() throws DisabledException, OverloadException{
+	public void totalChangeDueBillsThirtyDollars_Test() throws DisabledException, OverloadException{
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
-		billObserverStub = new DispenserStub();
+		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
 		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
 		paymentController.setCartTotal(BigDecimal.valueOf(20.00));		
@@ -989,6 +1018,34 @@ public class PaymentWithCashTest {
 		assertEquals("30.0",paymentController.getTotalChange());
 		assertEquals("0.0",""+paymentController.getChangeDue());
 		assertEquals("[10, 20]",ejectedBills.toString());
+	}
+	
+	/* Test Case: The customer pays over the total cart amount with a coin by $1.35 and 
+	 * the total change in coins only is dispensed. 
+	 * 
+	 * Description: The cart total is set at $0.65. $2 is paid in a single coin.
+	 *    
+	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
+	 * 
+	 * Expected Result: The total change is calculated to 0.65-2.00 = 1.35
+	 * Checking the total change should return a string value of "1.35".
+	 * Checking the change due should return a double value of be "0.0" which is converted to string.
+	 * The ejected coins should be $1, $0.25, and $0.10, which is stored as an array converted to string.
+	 */
+	@Test
+	public void totalChangeDueCoinsDollarThirtyFive_Test() throws DisabledException{
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(0.65));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		assertEquals("1.35",paymentController.getTotalChange());
+		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertEquals("[0.10, 0.25, 1.00]",ejectedCoins.toString());
 	}
 
 	/* Test Case: To see if updateCartTotal functions properly.
@@ -1018,7 +1075,7 @@ public class PaymentWithCashTest {
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		// Emptying billDispenser(20)
 		selfCheckoutStation.billDispensers.get(20).unload();
-		billObserverStub = new DispenserStub();
+		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
 		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
 		paymentController.setCartTotal(BigDecimal.valueOf(30.00));		
@@ -1046,7 +1103,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void totalChangeDueFiveDollars() throws DisabledException, OverloadException{
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
-		billObserverStub = new DispenserStub();
+		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);
 		paymentController.setCartTotal(BigDecimal.valueOf(45.00));		
 		while(billFalseNegative) {
