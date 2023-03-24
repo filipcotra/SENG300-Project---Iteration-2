@@ -12,6 +12,7 @@ package com.autovend.software;
 import java.util.ArrayList;
 
 import com.autovend.devices.AbstractDevice;
+import com.autovend.devices.OverloadException;
 import com.autovend.devices.ReceiptPrinter;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.devices.observers.AbstractDeviceObserver;
@@ -245,6 +246,14 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 			this.lowInk = true;
 		}
 	}
+	
+	public void refillInk() throws OverloadException {
+		if(this.lowInk == true) {
+			printer.addInk(2^20);
+		}
+	}
+	
+	
 
 
 	// Implement methods from the ReceiptPrinterObserver interface
