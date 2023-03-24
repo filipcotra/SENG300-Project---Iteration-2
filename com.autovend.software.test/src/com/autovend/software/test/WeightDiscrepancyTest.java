@@ -55,8 +55,15 @@ public class WeightDiscrepancyTest {
 		this.baggingAreaController = null;
 		
 	}
+	
+	@Test
+	public void weightDiscrepancyNormalTest() {
+		
+	}
 		
 	class MyCustomerIO implements CustomerIO {
+		
+		boolean customerWeightDiscrepancySignal;
 
 		@Override
 		public void scanItem(BarcodedUnit item) {
@@ -73,7 +80,7 @@ public class WeightDiscrepancyTest {
 		@Override
 		public void notifyWeightDiscrepancyCustomerIO() {
 			// TODO Auto-generated method stub
-			
+			this.customerWeightDiscrepancySignal = true;
 		}
 
 		@Override
@@ -121,17 +128,21 @@ public class WeightDiscrepancyTest {
 	}
 	
 	class MyAttendantIO implements AttendantIO {
+		
+		boolean attendantWeightDiscrepancySignal;
 
 		@Override
 		public void notifyWeightDiscrepancyAttendantIO() {
 			// TODO Auto-generated method stub
+			this.attendantWeightDiscrepancySignal = true;
 			
 		}
 
 		@Override
 		public boolean approveWeightDiscrepancy() {
 			// TODO Auto-generated method stub
-			return false;
+			this.attendantWeightDiscrepancySignal = false;
+			return true;
 		}
 
 		@Override
