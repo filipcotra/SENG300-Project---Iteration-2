@@ -342,4 +342,15 @@ public class ReceiptPrinterTest {
 		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
 		
 	}
+	
+	@Test public void lowPaperTest() {
+		try {
+			selfCheckoutStation.printer.addInk(1024);
+			selfCheckoutStation.printer.addPaper(40);
+		} catch (OverloadException e) {}
+		change = "3.00";
+		amountPaid = "45,00";
+		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
+		
+	}
 }
