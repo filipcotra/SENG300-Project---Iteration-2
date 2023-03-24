@@ -249,14 +249,14 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	
 	public void refillInk() throws OverloadException {
 		if(this.lowInk == true) {
-			printer.addInk(2^20);
+			printer.addInk(2^20 - this.inkRemaining);
 			System.out.println("Ink has been sucessfully refilled");
 		}
 	}
 	
 	public void refillPaper() throws OverloadException {
 		if(this.lowPaper == true) {
-			printer.addPaper(2^10);
+			printer.addPaper(2^10 - this.paperRemaining);
 			System.out.println("Paper has been sucessfully refilled");
 		}
 	}
