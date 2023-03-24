@@ -112,7 +112,19 @@ public class AddOwnBagsTest {
 		}
 
 		@Override
-		public void enterMembershipNumber() {
+		public String getMembershipNumber() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean cancelMembershipInput() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void notifyBadMembershipNumberCustomerIO() {
 			// TODO Auto-generated method stub
 			
 		}
