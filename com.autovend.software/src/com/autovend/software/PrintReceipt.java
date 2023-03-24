@@ -253,6 +253,12 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 	
+	public void refillPaper() throws OverloadException {
+		if(this.lowPaper == true) {
+			printer.addPaper(2^10);
+		}
+	}
+	
 	
 
 
