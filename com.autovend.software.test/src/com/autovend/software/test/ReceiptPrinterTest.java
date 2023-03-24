@@ -326,4 +326,20 @@ public class ReceiptPrinterTest {
 		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
 		assertTrue(42.0==receiptPrinterController.getTotalVal());
 	}
+	
+	/*
+	 * Test: to see if the low ink works
+	 * Expected: it should flag low when the remaining ink is under 10%
+	 * Result:
+	 */
+	@Test public void lowInkTest() {
+		try {
+			selfCheckoutStation.printer.addInk(40);
+			selfCheckoutStation.printer.addPaper(1024);
+		} catch (OverloadException e) {}
+		change = "3.00";
+		amountPaid = "45,00";
+		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
+		
+	}
 }
