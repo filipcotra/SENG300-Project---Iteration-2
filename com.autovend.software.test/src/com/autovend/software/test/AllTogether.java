@@ -153,6 +153,12 @@ class MyCustomerIO implements CustomerIO {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public void selectPaymentMethod(String paymentMethod) {
+		// TODO Auto-generated method stub
+		
+	}
 		
 		
 	}

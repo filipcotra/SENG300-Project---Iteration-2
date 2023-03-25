@@ -1,6 +1,7 @@
 package com.autovend.software.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -94,6 +95,16 @@ public class payWithCardTest {
 			// TODO Auto-generated method stub
 			return pin;
 		}
+		@Override
+		public void selectPaymentMethod(String paymentMethod) {
+			if (paymentMethod.equals("Cash")) {
+				paymentController.enableCashPayment();
+			}
+			else if(paymentMethod.equals("Card")) {
+				paymentController.enableCardPayment();
+			}
+			
+		}
 	}
 		
 	class myBankIO implements BankIO{
@@ -178,52 +189,70 @@ public class payWithCardTest {
 	}
 	
 	@Test
-	public void payCreditCart() throws IOException {
+	public void payCreditCard() throws IOException {
+		customer.selectPaymentMethod("Card");
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payCredit(new BigDecimal("20"), CCard, "4321", bank);
 		assertEquals(CCardComplete, 1);
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20.0",paymentController.getAmountPaid());
 	}
 	
 	@Test
-	public void payDebitCart() throws IOException {
+	public void payDebitCard() throws IOException {
+		customer.selectPaymentMethod("Card");
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payDebit(new BigDecimal("20"), DCard, "4321", bank);
 		assertEquals(DCardComplete, 1);
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20.0",paymentController.getAmountPaid());
 	}
 	
 	@Test
-	public void payCreditCartWrongPin() throws IOException {
+	public void payCreditCardWrongPin() throws IOException {
+		customer.selectPaymentMethod("Card");
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payCredit(new BigDecimal("20"), CCard, "1111", bank);
 		assertEquals(BlockedCard, 1);
+		assertEquals("20", paymentController.getCartTotal().toString());
+		assertEquals("0.0",paymentController.getAmountPaid());
 	}
 	
 	@Test
-	public void payDebitCartWrongPin() throws IOException {
+	public void payDebitCardWrongPin() throws IOException {
+		customer.selectPaymentMethod("Card");
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payDebit(new BigDecimal("20"), DCard, "1111", bank);
 		assertEquals(BlockedCard, 1);
+		assertEquals("20", paymentController.getCartTotal().toString());
+		assertEquals("0.0",paymentController.getAmountPaid());
 	}
 	
 	@Test
-	public void payCreditCartWrongPinThenCorrect() throws IOException {
+	public void payCreditCardWrongPinThenCorrect() throws IOException {
 		customer = new MyCustomerIO("4321");
+		customer.selectPaymentMethod("Card");
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
 		
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payCredit(new BigDecimal("20"), CCard, "1111", bank);
 		assertEquals(CCardComplete, 1);
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20.0",paymentController.getAmountPaid());
 	}
 	
 	@Test
-	public void payDebitCartWrongPinThenCorrect() throws IOException {
+	public void payDebitCardWrongPinThenCorrect() throws IOException {
 		customer = new MyCustomerIO("4321");
+		customer.selectPaymentMethod("Card");
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
 		
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payDebit(new BigDecimal("20"), DCard, "1111", bank);
 		assertEquals(DCardComplete, 1);
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20.0",paymentController.getAmountPaid());
 	}
 }
