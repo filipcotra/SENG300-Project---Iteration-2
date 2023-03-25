@@ -250,6 +250,7 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	public void refillInk() throws OverloadException {
 		if(this.lowInk == true) {
 			printer.addInk(2^20 - this.inkRemaining);
+			this.attendant.acknowledgeLowInk();
 			System.out.println("Ink has been sucessfully refilled");
 		}else {
 			System.out.println("Task Failed: Ink has not been refilled!");
