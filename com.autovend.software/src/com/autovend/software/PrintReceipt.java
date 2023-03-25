@@ -275,6 +275,7 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 			unSuspendSystem();
 			System.out.println("System unsuspended!");
 			this.lowInk = false;
+			setContents(2^20-this.inkRemaining, 0);
 		}
 	}
 	
@@ -286,6 +287,7 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 			unSuspendSystem();
 			System.out.println("System unsuspended!");
 			this.lowPaper = false;
+			setContents(0,2^10-this.paperRemaining);
 		}
 	}
 	
