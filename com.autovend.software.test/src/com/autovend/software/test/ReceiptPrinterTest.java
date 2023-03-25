@@ -329,10 +329,11 @@ public class ReceiptPrinterTest {
 	
 	/*
 	 * Test: to see if the low ink works
-	 * Expected: it should flag low when the remaining ink is under 10%
-	 * Result:
+	 * Expected: low ink is called, attendant refills and therefore low ink should be false
+	 * Result: low ink is false
 	 */
 	@Test public void lowInkTest() {
+
 		try {
 			selfCheckoutStation.printer.addInk(70);
 			selfCheckoutStation.printer.addPaper(1024);
@@ -342,16 +343,25 @@ public class ReceiptPrinterTest {
 		amountPaid = "45.00";
 		
 		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
+		assertTrue(!receiptPrinterController.getLowInk());
 	}
 	
+	/*
+	 * Test: to see if the paper ink works
+	 * Expected: low paper is called, attendant refills and therefore low paper should be false
+	 * Result: low paper is false
+	 */
 	@Test public void lowPaperTest() {
+		int paper = 8;
 		try {
-			selfCheckoutStation.printer.addInk(1024);
-			selfCheckoutStation.printer.addPaper(40);
+			selfCheckoutStation.printer.addInk(1048576);
+			selfCheckoutStation.printer.addPaper(paper);
+			receiptPrinterController.setContents(1048576, paper);
 		} catch (OverloadException e) {}
 		change = "3.00";
-		amountPaid = "45,00";
+		amountPaid = "45.00";
 		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
-		
+		assertTrue(!receiptPrinterController.getLowPaper());
 	}
+	
 }
