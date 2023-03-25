@@ -286,6 +286,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 * Verifies if the membership number entered by the customer is valid before adding it to the session
 	 */
 	public void addMembershipNumber() {
+
 		String membershipInput = myCustomer.getMembershipNumber(); // Gets value entered by customer
 		boolean validMembership = true; // Boolean to decide if the membership number is valid
 		
@@ -303,6 +304,11 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		} else { // If valid membership
 			this.membership = membershipInput; // Add membership number to the session
 		}
+		
+	}
+	
+	public String getMembershipNumber() {
+		return this.membership;
 	}
 	
 	@Override
