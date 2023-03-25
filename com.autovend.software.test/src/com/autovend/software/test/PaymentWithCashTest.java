@@ -1037,7 +1037,6 @@ public class PaymentWithCashTest {
 	@Test
 	public void totalChangeDueCoinsDollarThirtyFive_Test() throws DisabledException{
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
-		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		coinObserverStub = new CoinDispenserStub();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
@@ -1049,6 +1048,33 @@ public class PaymentWithCashTest {
 		assertEquals("1.35",paymentController.getTotalChange());
 		assertEquals("0.00",""+paymentController.getChangeDue());
 		assertEquals("[0.10, 0.25, 1.00]",ejectedCoins.toString());
+	}
+	
+	/* Test Case: The customer pays over the total cart amount with a coin by $0.06 and 
+	 * the total change in coins only is dispensed. 
+	 * 
+	 * Description: The cart total is set at $1.94. $2 is paid in a single coin.
+	 *    
+	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
+	 * 
+	 * Expected Result: The total change is calculated to 1.94-2.00 = 0.06
+	 * Checking the total change should return a string value of "0.06".
+	 * Checking the change due should return a double value of be "0.01" which is converted to string.
+	 * The ejected coin should be $0.05, which is stored as an array converted to string.
+	 */
+	@Test
+	public void totalChangeRemains() throws DisabledException{
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(1.94));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		assertEquals("0.06",paymentController.getTotalChange());
+		assertEquals("0.01",""+paymentController.getChangeDue());
+		assertEquals("[0.05]",ejectedCoins.toString());
+		assertTrue(attendantSignalled);
 	}
 	
 	/* Test Case: The customer pays over the total cart amount with a bill by $16.40 and 
