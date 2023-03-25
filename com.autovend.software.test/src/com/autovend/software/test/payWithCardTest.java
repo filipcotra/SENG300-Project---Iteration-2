@@ -231,10 +231,10 @@ public class payWithCardTest {
 	@Test
 	public void payCreditCardWrongPinThenCorrect() throws IOException {
 		customer = new MyCustomerIO("4321");
-		customer.selectPaymentMethod("Card");
+		
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
-		
+		customer.selectPaymentMethod("Card");
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payCredit(new BigDecimal("20"), CCard, "1111", bank);
 		assertEquals(CCardComplete, 1);
@@ -245,14 +245,40 @@ public class payWithCardTest {
 	@Test
 	public void payDebitCardWrongPinThenCorrect() throws IOException {
 		customer = new MyCustomerIO("4321");
-		customer.selectPaymentMethod("Card");
+		
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
-		
+		customer.selectPaymentMethod("Card");
 		paymentController.setCartTotal(new BigDecimal("20"));
 		paymentController.payDebit(new BigDecimal("20"), DCard, "1111", bank);
 		assertEquals(DCardComplete, 1);
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
+	}
+	
+	@Test
+	public void payDebitChipFailure() throws IOException {
+		customer.selectPaymentMethod("Card");
+		// Simulate 1000 payments to capture random chip failure event
+		for (int i=0; i<1000; i++) {
+			paymentController.setCartTotal(new BigDecimal("20"));
+			paymentController.payDebit(new BigDecimal("20"), DCard, "4321", bank);
+		}
+		assertEquals(DCardComplete, 1000);
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20000.0",paymentController.getAmountPaid());
+	}
+	
+	@Test
+	public void payCreditChipFailure() throws IOException {
+		customer.selectPaymentMethod("Card");
+		// Simulate 1000 payments to capture random chip failure event
+		for (int i=0; i<1000; i++) {
+			paymentController.setCartTotal(new BigDecimal("20"));
+			paymentController.payCredit(new BigDecimal("20"), CCard, "4321", bank);
+		}
+		assertEquals(CCardComplete, 1000);
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20000.0",paymentController.getAmountPaid());
 	}
 }
