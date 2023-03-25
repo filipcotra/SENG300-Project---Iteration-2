@@ -33,6 +33,7 @@ import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinDispenser;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.CoinValidator;
+import com.autovend.devices.DisabledException;
 import com.autovend.devices.EmptyException;
 import com.autovend.devices.ReceiptPrinter;
 import com.autovend.devices.observers.AbstractDeviceObserver;
@@ -74,7 +75,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	private BigDecimal maxCoinDenom;
 	private BigDecimal minCoinDenom;
 	private BillSlot output;
-	
+	private BillSlot input;
+	private Boolean suspended;
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -119,7 +121,10 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.totalChange = BigDecimal.valueOf(0.0);
 		this.changeDue = BigDecimal.valueOf(0.0);
 		this.output = station.billOutput;
+		this.input = station.billInput;
 		this.output.register(this);
+		this.input.register(this);
+		this.suspended = false;
 	}
 
 /* ------------------------ General Methods --------------------------------------------------*/
@@ -229,22 +234,17 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * Suspends machine. This is updated with the new SelfCheckoutMachine objects now.
 	 */
 	private void suspendMachine() {
+		this.suspended = true;
 		this.station.baggingArea.disable();
 		for(int denom : this.denominations) {
 			this.station.billDispensers.get(denom).disable();
 		}
 		this.station.billInput.disable();
 		this.station.billOutput.disable();
-		this.station.billStorage.disable();
-		this.station.billValidator.disable();
 		this.station.handheldScanner.disable();
 		this.station.mainScanner.disable();
-		this.station.printer.disable();
-		this.station.scale.disable();
 		this.station.cardReader.disable();
 		this.station.coinSlot.disable();
-		this.station.coinTray.disable();
-		this.station.coinStorage.disable();
 		this.station.coinValidator.disable();
 		for(BigDecimal denom : this.coinDenominations) {
 			this.station.coinDispensers.get(denom).disable();
@@ -324,8 +324,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 					}
 				}
 				catch(Exception e) {
-					e.printStackTrace();
-					// Unspecified functionality
+					break;
 				}
 			}
 		}
@@ -366,8 +365,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 					}
 				}
 				catch(Exception e) {
-					e.printStackTrace();
-					// Unspecified functionality
+					break;
 				}				
 			}
 		}
@@ -386,10 +384,10 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 			this.setChangeDue(BigDecimal.valueOf(0.0).subtract(this.getCartTotal()));
 			this.setTotalChange(this.getChangeDue());
 			this.setCartTotal(BigDecimal.valueOf(0.0)); //Set cart total after change has been calculated.
-			if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0) {
+			if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
 				this.dispenseChange();
 			}
-			else {
+			else if(this.suspended == false) {
 				this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 			}
 		}
@@ -545,10 +543,10 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	@Override
 	public void reactToBillRemovedEvent(BillDispenser dispenser, Bill bill) {
 		this.setChangeDue(this.getChangeDue().subtract(BigDecimal.valueOf(bill.getValue())));
-		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0) {
+		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
 			this.dispenseChange();
 		}
-		else {
+		else if(this.suspended == false) {
 			this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 		}
 	}
@@ -610,10 +608,10 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	@Override
 	public void reactToCoinRemovedEvent(CoinDispenser dispenser, Coin coin) {
 		this.setChangeDue(this.getChangeDue().subtract(coin.getValue()));
-		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0) {
+		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
 			this.dispenseChange();
 		}
-		else {
+		else if(this.suspended == false) {
 			this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 		}
 	}

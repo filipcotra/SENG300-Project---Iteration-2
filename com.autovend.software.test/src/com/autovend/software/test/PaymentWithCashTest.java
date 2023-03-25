@@ -128,8 +128,12 @@ public class PaymentWithCashTest {
 
 		@Override
 		public void reactToBillsEmptyEvent(BillDispenser dispenser) {
-			// TODO Auto-generated method stub
-			
+			int billValue = 0;
+			for(int denom : selfCheckoutStation.billDenominations) {
+				if(selfCheckoutStation.billDispensers.get(denom).equals(dispenser)) {
+					ejectedBills.add(denom);
+				}
+			}	
 		}
 
 		@Override
@@ -1371,7 +1375,7 @@ public class PaymentWithCashTest {
 			selfCheckoutStation.billInput.accept(billFifty);
 		}
 		assertEquals("35.0",paymentController.getTotalChange());
-		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertTrue(BigDecimal.valueOf(0.0).compareTo(paymentController.getChangeDue()) == 0);
 		assertEquals("[5, 10, 20]",ejectedBills.toString());
 		assertFalse(attendantSignalled);
 	}
@@ -1437,11 +1441,11 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialBillNotEnoughChange() throws OverloadException {
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying billDispensers, to be reloaded with a single bill each
 		selfCheckoutStation.billDispensers.get(5).unload();
 		selfCheckoutStation.billDispensers.get(10).unload();
 		selfCheckoutStation.billDispensers.get(20).unload();
-		
 		
 		// Emptying all coinDispensers, to ensure only bills in machine to dispense
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
@@ -1478,12 +1482,13 @@ public class PaymentWithCashTest {
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
-		paymentController.setCartTotal(BigDecimal.valueOf(10));		
+		paymentController.setCartTotal(BigDecimal.valueOf(10));
 		while(billFalseNegative) {
 			selfCheckoutStation.billInput.accept(billFifty);
+			System.out.println("After accept");
 		}
 		assertEquals("40.0",paymentController.getTotalChange());
-		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertTrue(BigDecimal.valueOf(5.00).compareTo(paymentController.getChangeDue()) == 0);
 		assertEquals("[5, 10, 20]",ejectedBills.toString());
 		assertTrue(attendantSignalled);
 	}
