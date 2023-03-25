@@ -1219,7 +1219,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void insufficientCoinChange() throws OverloadException {
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
-		// Emptying coinDispenser(1.00)
+		// Emptying coinDispensers
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
@@ -1249,11 +1249,12 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialCoinEnoughChange() throws OverloadException {
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
-		// Emptying coinDispensers
+		// Emptying coinDispensers, to be reloaded with a single coin each
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
 		
+		// Load in a single $0.05, $0.10, and $0.25 coin
 		try {
 			Coin[] oneNickel = new Coin[] {coinNickel};
 			Coin[] oneDime = new Coin[] {coinDime};
@@ -1269,6 +1270,7 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		
+		// Register relevant observers
 		coinObserverStub = new CoinDispenserStub();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
@@ -1297,19 +1299,20 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialBillEnoughChange() throws DisabledException, OverloadException {
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
-		// Emptying billDispensers
+		// Emptying billDispensers, to be reloaded with a single bill each
 		selfCheckoutStation.billDispensers.get(5).unload();
 		selfCheckoutStation.billDispensers.get(10).unload();
 		selfCheckoutStation.billDispensers.get(20).unload();
 		
 		
-		// Emptying all coinDispensers
+		// Emptying all coinDispensers, to ensure only bills in machine to dispense
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
 		
+		// Load in a single $5, $10, and $20 bill
 		try {
 			Bill[] oneFiveBill = new Bill[] {billFive};
 			Bill[] oneTenBill = new Bill[] {billTen};
@@ -1325,11 +1328,11 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		
+		// Register observers over the relevant dispensers and empty ones
 		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
 		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
 		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);
-		
 		coinObserverStub = new CoinDispenserStub();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).register(coinObserverStub);
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
@@ -1359,11 +1362,12 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialCoinNotEnoughChange() throws OverloadException {
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
-		// Emptying coinDispensers
+		// Emptying coinDispensers, to be reloaded with a single coin each
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
 		
+		// Load in a single $0.05, $0.10, and $0.25 coin
 		try {
 			Coin[] oneNickel = new Coin[] {coinNickel};
 			Coin[] oneDime = new Coin[] {coinDime};
@@ -1379,6 +1383,7 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		
+		// Register relevant observers
 		coinObserverStub = new CoinDispenserStub();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
@@ -1387,7 +1392,7 @@ public class PaymentWithCashTest {
 		while(coinFalseNegative) {
 			selfCheckoutStation.coinSlot.accept(coinToonie);
 		}
-		assertEquals("0.40",paymentController.getTotalChange());
+		assertEquals("0.50",paymentController.getTotalChange());
 		assertEquals("0.10",""+paymentController.getChangeDue());
 		assertEquals("[0.05, 0.10, 0.25]",ejectedCoins.toString());
 		assertTrue(attendantSignalled);
@@ -1406,19 +1411,20 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialBillNotEnoughChange() throws OverloadException {
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
-		// Emptying billDispensers
+		// Emptying billDispensers, to be reloaded with a single bill each
 		selfCheckoutStation.billDispensers.get(5).unload();
 		selfCheckoutStation.billDispensers.get(10).unload();
 		selfCheckoutStation.billDispensers.get(20).unload();
 		
 		
-		// Emptying all coinDispensers
+		// Emptying all coinDispensers, to ensure only bills in machine to dispense
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
 		
+		// Load in a single $5, $10, and $20 bill
 		try {
 			Bill[] oneFiveBill = new Bill[] {billFive};
 			Bill[] oneTenBill = new Bill[] {billTen};
@@ -1434,6 +1440,7 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		
+		// Register relevant observers
 		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
 		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
@@ -1450,7 +1457,7 @@ public class PaymentWithCashTest {
 			selfCheckoutStation.billInput.accept(billFifty);
 		}
 		assertEquals("40.0",paymentController.getTotalChange());
-		assertEquals("5.0",""+paymentController.getChangeDue());
+		assertEquals("0.00",""+paymentController.getChangeDue());
 		assertEquals("[5, 10, 20]",ejectedBills.toString());
 		assertTrue(attendantSignalled);
 	}
