@@ -256,13 +256,13 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 
 
 	public void lowPaper(){
-		if (paperRemaining < initialPaper/10){
+		if (paperRemaining <= initialPaper/10){
 			this.lowPaper = true;
 		}
 	}
 
 	public void lowInk(){
-		if (inkRemaining < initialInk/10){
+		if (inkRemaining <= initialInk/10){
 			this.lowInk = true;
 		}
 	}
