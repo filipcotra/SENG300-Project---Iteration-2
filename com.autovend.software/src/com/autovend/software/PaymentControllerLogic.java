@@ -256,7 +256,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * This should be called by the CustomerIO when they select a payment
 	 * method. To do so, it simply enables all cash payment devices.
 	 */
-	private void enableCashPayment() {
+	public void enableCashPayment() {
 		this.station.coinSlot.enable();
 		this.station.coinTray.enable();
 		this.station.coinStorage.enable();

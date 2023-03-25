@@ -81,4 +81,10 @@ public interface CustomerIO {
 	 * Simulates getting the pin from the customer
 	 */
 	public String getPin();
+	
+	
+	/*
+	 * Simualates the customer selecting a payment method, to enable required devices
+	 */
+	public void selectPaymentMethod(String paymentMethod);
 }
