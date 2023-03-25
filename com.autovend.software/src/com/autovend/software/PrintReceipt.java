@@ -260,6 +260,7 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	public void refillPaper() throws OverloadException {
 		if(this.lowPaper == true) {
 			printer.addPaper(2^10 - this.paperRemaining);
+			this.attendant.acknowledgeLowPaper();
 			System.out.println("Paper has been sucessfully refilled");
 		}else {
 			System.out.println("Task Failed: Paper has not been refilled!");
