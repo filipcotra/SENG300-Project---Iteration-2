@@ -96,6 +96,21 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	}
 
 	/**
+	 * Method to unsuspend all the hardware components of the self checkout system
+	 */
+	public void unSuspendSystem() {
+		this.station.printer.enable();
+		this.station.baggingArea.enable();
+		this.station.mainScanner.enable();
+		this.station.handheldScanner.enable();
+		this.station.billInput.enable();
+		this.station.billOutput.enable();
+		this.station.billStorage.enable();
+		this.station.billValidator.enable();
+	}
+
+
+	/**
 	 * The method that prints out the receipt for the customer. Starts by printing
 	 * the items and their corresponding prices, and then the total, amount paid by
 	 * the customer, and the change they were given. Before print is called, each
@@ -192,6 +207,11 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 			// Step 4: Once the receipt is printed, signals to Customer I/O that session is
 			// complete.
 			this.customer.thankCustomer();
+			if (lowPaper || lowInk){
+				suspendSystem();
+				refillPaper();
+				refillInk();
+			}
 		}
 		// Catch any exceptions
 		catch (Exception e) {
