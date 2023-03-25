@@ -272,8 +272,10 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 			printer.addInk(2^20 - this.inkRemaining);
 			this.attendant.acknowledgeLowInk();
 			System.out.println("Ink has been sucessfully refilled");
+			unSuspendSystem();
 		}else {
 			System.out.println("Task Failed: Ink has not been refilled!");
+			suspendSystem();
 		}
 	}
 	
@@ -282,8 +284,10 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 			printer.addPaper(2^10 - this.paperRemaining);
 			this.attendant.acknowledgeLowPaper();
 			System.out.println("Paper has been sucessfully refilled");
+			unSuspendSystem();
 		}else {
 			System.out.println("Task Failed: Paper has not been refilled!");
+			suspendSystem();
 		}
 	}
 	
