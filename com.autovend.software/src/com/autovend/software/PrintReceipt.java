@@ -209,7 +209,7 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 				this.printer.print(ch);
 				if (ch == '\n'){
 					paperRemaining -=1;
-				} else {
+				} else if (!Character.isWhitespace(ch)) {
 					inkRemaining -=1;
 				}
 				lowPaper();
