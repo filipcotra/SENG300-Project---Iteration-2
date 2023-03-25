@@ -295,7 +295,13 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 	
-	
+	public boolean getLowInk(){
+		return this.lowInk;
+	}
+
+	public boolean getLowPaper(){
+		return this.lowPaper;
+	}
 
 
 	// Implement methods from the ReceiptPrinterObserver interface
