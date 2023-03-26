@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -79,6 +80,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	private BillSlot output;
 	private BillSlot input;
 	private Boolean suspended;
+	private BigDecimal amountToPayCard; // The customer should indicate this
+	BankIO myBank;
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -94,7 +97,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * @param attendant
 	 * 		AttendantIO interface that is monitoring the machine
 	 */
-	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, PrintReceipt printerLogic) {
+	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, BankIO bank, PrintReceipt printerLogic) {
 		this.station = SCS;
 		this.station.billValidator.register(this);
 		this.station.coinValidator.register(this);
@@ -127,6 +130,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.output.register(this);
 		this.input.register(this);
 		this.suspended = false;
+		this.myBank = bank;
+		this.amountToPayCard = BigDecimal.ZERO; // By default
 	}
 
 /* ------------------------ General Methods --------------------------------------------------*/
@@ -259,6 +264,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * method. To do so, it simply enables all cash payment devices.
 	 */
 	public void enableCashPayment() {
+		this.disableCardPayment();
 		this.station.coinSlot.enable();
 		this.station.coinTray.enable();
 		this.station.coinStorage.enable();
@@ -276,12 +282,42 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	}
 	
 	/**
+	 * Disabled cash payment.
+	 */
+	public void disableCashPayment() {
+		this.station.coinSlot.disable();
+		this.station.coinTray.disable();
+		this.station.coinStorage.disable();
+		this.station.coinValidator.disable();
+		for(BigDecimal denom : this.coinDenominations) {
+			this.station.coinDispensers.get(denom).disable();
+		}
+		for(int denom : this.denominations) {
+			this.station.billDispensers.get(denom).disable();
+		}
+		this.station.billInput.disable();
+		this.station.billOutput.disable();
+		this.station.billStorage.disable();
+		this.station.billValidator.disable();
+	}
+	
+	/**
 	 * This enables the card payments. As with cash payment method
 	 * above, this should be called when payment is selected, and
 	 * enables all necessary devices (just CardReader in this case).
+	 * This is Step 2 of Pay with Credit use-case.
 	 */
-	public void enableCardPayment() {
+	public void enableCardPayment(BigDecimal amount) {
+		this.disableCashPayment();
+		this.amountToPayCard = amount;
 		this.station.cardReader.enable(); 
+	}
+	
+	/**
+	 * Disable card payment.
+	 */
+	public void disableCardPayment() {
+		this.station.cardReader.disable();
 	}
 	
 /* ------------------------ Cash Payment Methods ---------------------------------------------*/	
@@ -378,7 +414,6 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * added. (Step 2, Step 3, Step 5, Step 6)
 	 */
 	public void payCash(BigDecimal cashValue) {
-		this.enableCashPayment();
 		this.updateAmountPaid(cashValue);
 		this.setCartTotal(this.getCartTotal().subtract(cashValue));
 		myCustomer.showUpdatedTotal(this.getCartTotal());
@@ -400,109 +435,82 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	
 /* ------------------------ Pay with Credit --------------------------------------------------*/
 	// implements the pay with credit use case. trigger: customer must with to pay with credit
-	public void payCredit(BigDecimal amountPaid, CreditCard card, String pin, BankIO bank) throws IOException {
-		//step 2: enable card reader
-		this.enableCardPayment();
-		//step 3: passing card and PIN to card reader
-		while (true) {
-			try {
-				station.cardReader.insert(card, pin);
-				break;
-			//if the pin is entered wrong, retry
-			} catch (InvalidPINException e) {
-				station.cardReader.remove();
-				pin = myCustomer.getPin();
-			//random probability of failure, just retry
-			} catch (ChipFailureException e1) {
-				station.cardReader.remove();
-				continue;
-			//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
-			} catch (BlockedCardException e2) {
-				RepeatedBadPin(bank, card);
-				station.cardReader.disable();
-				return;
-			}
-		}
-		//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
-		//should signal back the hold number
-		int holdNumber = bank.creditCardTranscation(card, amountPaid);
-		//hold number of 0 means the transaction failed
-		if(holdNumber == 0) {
+	public void payCredit(CardReader reader, CardData data) {
+		int creditHoldNumber;
+		Boolean transactionCompleted = false;;
+		if(this.myBank == null) { // Exception 1
 			myCustomer.transactionFailure();
-			station.cardReader.remove();
-			station.cardReader.disable();
-			return;
+			reader.remove();
 		}
-		//step 8: the system should signal the bank to complete the transaction
-		bank.completeTransaction(holdNumber);
-		//step 10: Reduces the remaining amount due by the amount of the transaction
-		this.updateAmountPaid(amountPaid);
-		this.setCartTotal(this.getCartTotal().subtract(amountPaid));
-		//step 11: Signals to the Card Reader to release the card
-		boolean success = station.cardReader.remove();
-		//step 13: Card reader signals to the System that the operation is complete
-		if (success) {
-			//step 14: Signals to Customer I/O that the operation is complete and the remaining 
-			//amount due is reduced.
-			myCustomer.payWithCreditComplete(this.getCartTotal());
-		}
-		station.cardReader.disable();
-	}
-	
-	// implements the pay with debit use case. trigger: customer must with to pay with debit
-		public void payDebit(BigDecimal amountPaid, DebitCard card, String pin, BankIO bank) throws IOException {
-			//step 2: enable card reader
-			this.enableCardPayment();
-			//step 3: passing card and PIN to card reader
-			while (true) {
-				try {
-					station.cardReader.insert(card, pin);
-					break;
-				//if the pin is entered wrong, retry
-				} catch (InvalidPINException e) {
-					station.cardReader.remove();
-					pin = myCustomer.getPin();
-				//random probability of failure, just retry
-				} catch (ChipFailureException e1) {
-					station.cardReader.remove();
-					continue;
-				//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
-				} catch (BlockedCardException e2) {
-					myCustomer.transactionFailure();
-					RepeatedBadPin(bank, card);
-					station.cardReader.disable();
-					return;
+		creditHoldNumber = this.myBank.creditCardTransaction(data, this.amountToPayCard);
+		if(creditHoldNumber != 0) { // 0 indicates non-authorized
+			int tries = 0;
+			while(tries < 5) // Exception 3
+			try {	
+				this.myBank.completeTransaction(creditHoldNumber);
+				transactionCompleted = true;
+			} catch(Exception e) {
+				tries++;
+				
+				try {	
+					TimeUnit.SECONDS.sleep(20);
+				} catch(Exception exc) {
 				}
 			}
-			//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
-			//should signal back the hold number
-			int holdNumber = bank.debitCardTranscation(card, amountPaid);
-			//hold number of 0 means the transaction failed
-			if(holdNumber == 0) {
-				myCustomer.transactionFailure();
-				station.cardReader.remove();
-				station.cardReader.disable();
-				return;
+			if(transactionCompleted) {
+				this.updateAmountPaid(this.amountToPayCard);
+				this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
+				reader.remove();
+				myCustomer.payWithCreditComplete(this.amountToPayCard);
+				this.amountToPayCard = BigDecimal.ZERO; // Reset
 			}
-			//step 8: the system should signal the bank to complete the transaction
-			bank.completeTransaction(holdNumber);
-			//step 10: Reduces the remaining amount due by the amount of the transaction
-			this.updateAmountPaid(amountPaid);
-			this.setCartTotal(this.getCartTotal().subtract(amountPaid));
-			//step 11: Signals to the Card Reader to release the card
-			boolean success = station.cardReader.remove();
-			//step 13: Card reader signals to the System that the operation is complete
-			if (success) {
-				//step 14: Signals to Customer I/O that the operation is complete and the remaining 
-				//amount due is reduced.
-				myCustomer.payWithDebitComplete(this.getCartTotal());
+			else {
+				myBank.releaseHold(data);
 			}
-			station.cardReader.disable();
 		}
-
-	// implements the repeated bad pin use case. called by pay with credit or pay with debit
-	private void RepeatedBadPin(BankIO bank, Card card) {
-		bank.blockCard(card);
+		else {
+			myCustomer.transactionFailure();
+			reader.remove();
+		}
+	}
+	
+	public void payDebit(CardReader reader, CardData data) {
+		int debitHoldNumber;
+		Boolean transactionCompleted = false;;
+		if(this.myBank == null) { // Exception 1
+			myCustomer.transactionFailure();
+			reader.remove();
+		}
+		debitHoldNumber = this.myBank.debitCardTransaction(data, this.amountToPayCard);
+		if(debitHoldNumber != 0) { // 0 indicates non-authorized
+			int tries = 0;
+			while(tries < 5) // Exception 3
+			try {	
+				this.myBank.completeTransaction(debitHoldNumber);
+				transactionCompleted = true;
+			} catch(Exception e) {
+				tries++;
+				
+				try {	
+					TimeUnit.SECONDS.sleep(20);
+				} catch(Exception exc) {
+				}
+			}
+			if(transactionCompleted) {
+				this.updateAmountPaid(this.amountToPayCard);
+				this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
+				reader.remove();
+				myCustomer.payWithCreditComplete(this.amountToPayCard);
+				this.amountToPayCard = BigDecimal.ZERO; // Reset
+			}
+			else {
+				myBank.releaseHold(data);
+			}
+		}
+		else {
+			myCustomer.transactionFailure();
+			reader.remove();
+		}
 	}
 	
 /* ------------------------ Observer Overrides -----------------------------------------------*/
@@ -718,6 +726,11 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 
 	@Override
 	public void reactToCardDataReadEvent(CardReader reader, CardData data) {
-		
+		if(data.getType().equals("Credit")) {
+			this.payCredit(reader, data);
+		}
+		else if(data.getType().equals("Debit")) {
+			this.payDebit(reader, data);;
+		}
 	}
 }
