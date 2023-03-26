@@ -89,7 +89,6 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.cartTotal = BigDecimal.valueOf(0.0);
 		this.totalChange = BigDecimal.valueOf(0.0);
 		this.changeDue = BigDecimal.valueOf(0.0);
-		this.membership = "";
 	}
 
 	/**
