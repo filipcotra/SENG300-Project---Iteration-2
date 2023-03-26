@@ -15,20 +15,18 @@ import com.autovend.devices.BillSlot;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.CustomerIO;
+import com.autovend.software.MembershipNumberController;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
 
 public class EnterMembershipNumberTest {
-	SelfCheckoutStation scs;
-	PaymentControllerLogic controller;
-	PrintReceipt printLogic;
+	MembershipNumberController controller;
+	int validLength;
 	CustomerIO customer;
-	AttendantIO attendant;
 	String membershipGood;
 	String membershipBad;
+	String membershipShort;
 	String inputData;
-	boolean cancelDecision;
-	boolean valid;
 	
 	
 	class ThisCustomer implements CustomerIO {
@@ -91,70 +89,29 @@ public class EnterMembershipNumberTest {
 		@Override
 		public void notifyBadMembershipNumberCustomerIO() {
 			System.out.println("Invalid Membership Number. Please try again or cancel.");
-			valid = false;
 		}
 		
 	}
 	
-	class ThisAttendant implements AttendantIO {
-
-		@Override
-		public void notifyWeightDiscrepancyAttendantIO() {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public boolean approveWeightDiscrepancy() {
-			// TODO Auto-generated method stub
-			return false;
-		}
-
-		@Override
-		public void changeRemainsNoDenom(BigDecimal changeLeft) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void printDuplicateReceipt() {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void checkAddedOwnBags() {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void acceptOwnBags() {
-			// TODO Auto-generated method stub
-			
-		}
-		
-	}
 	
 	@Before
 	public void setup() {
-		// Setting up the self checkout station and its controller
-		scs = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5, 10}, new BigDecimal[] {new BigDecimal(1)}, 11111, 1);
-		attendant = new ThisAttendant();
+		// Setting up the parameters for the membership number controller
+		validLength = 10;
+		char[] validChars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 		customer = new ThisCustomer();
-		printLogic = new PrintReceipt(scs, scs.printer, customer, attendant);
-		controller = new PaymentControllerLogic(scs, customer, attendant, printLogic);
+		controller = new MembershipNumberController(validChars, validLength, customer);
 		
 		// Setting the membership numbers
-		membershipGood = "1234567890"; // Good memberships only contain digits
+		membershipGood = "1231231231"; // Good memberships only contain digits
 		membershipBad = "123bad7890"; // Bad memberships contain letters and other symbols
-		valid = true; // Default valid is true, is set to false if bad membership number is entered
+		membershipShort = "123";
 	}
 	
 
 	/**
 	 * Tests the getMembershipNumber function in the CustomerIO interface 
-	 * Expected result should be the same as the input string read from the Customer
+	 * Expected result should be the same as the input string read from the Customern
 	 */
 	@Test
 	public void testGetMembership() {
@@ -182,7 +139,14 @@ public class EnterMembershipNumberTest {
 	public void testBadMembershipEntered() {
 		inputData = membershipBad;
 		controller.addMembershipNumber();
-		assertFalse(valid);
+		assertFalse(controller.checkValidMembershipNumber());
+	}
+	
+	@Test
+	public void testShortMembershipEntered() {
+		inputData = membershipShort;
+		controller.addMembershipNumber();
+		assertFalse(controller.checkValidMembershipNumber());
 	}
 
 }
