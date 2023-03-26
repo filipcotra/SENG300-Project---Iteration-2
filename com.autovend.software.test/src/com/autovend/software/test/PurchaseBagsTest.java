@@ -15,6 +15,7 @@ import com.autovend.BarcodedUnit;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIOTempPurchaseOwnBags;
+import com.autovend.software.CustomerIO;
 import com.autovend.software.CustomerIOTempPurchaseOwnBags;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -138,7 +139,7 @@ public class PurchaseBagsTest {
 		assertTrue("CustomerIO should have reacted to interactionReadySignal.", customerIO.interactionReadySignal);
 	}
 	
-	class MyCustomerIO implements CustomerIOTempPurchaseOwnBags {
+	class MyCustomerIO implements CustomerIO {
 		
 		boolean purchaseBagsSignal = false;
 		int purchaseBagsQuantity = 0;

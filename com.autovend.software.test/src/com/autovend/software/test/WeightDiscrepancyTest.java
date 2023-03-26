@@ -124,6 +124,30 @@ public class WeightDiscrepancyTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public void signalPurchaseBags(int quantity) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalFinishedPurchasingBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalReadyForInteraction() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPutPurchasedBagsOnBaggingArea() {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	

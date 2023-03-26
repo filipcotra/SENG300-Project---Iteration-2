@@ -63,6 +63,31 @@ public interface CustomerIO {
 	 * Simulates the customer removing the bill from the slot
 	 */
 	public void removeBill(BillSlot slot);
+
+	/**
+	 * A signal from the Customer IO to the station, notifying the station that the Customer wants
+	 * to purchase re-usable bags.
+	 * 
+	 * @param quantity
+	 * 		The number of bags the customer wants to purchase.
+	 */
+	public void signalPurchaseBags(int quantity);
+	
+
+	/**
+	 * A signal from the station to Customer IO, notifying the Customer that the operation was successful.
+	 */
+	public void signalFinishedPurchasingBags();
+	
+	/**
+	 * A signal from the station to Customer IO, notifying that the station is ready for interaction.
+	 */
+	public void signalReadyForInteraction();
+	
+	/**
+	 * A signal from the station to Customer IO, notifying the customer to put the purchased bags on the bagging area.
+	 */
+	public void signalPutPurchasedBagsOnBaggingArea();
 	
 	/**
 	 * Simulates the customer wanting to add their membership number to the transaction
