@@ -300,6 +300,13 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.station.billStorage.disable();
 		this.station.billValidator.disable();
 	}
+
+	/**
+	 * Sets the amount that the customer wishes to pay by card.
+	 */
+	public void setCardPaymentAmount(BigDecimal amount) {
+		this.amountToPayCard = amount;
+	}
 	
 	/**
 	 * This enables the card payments. As with cash payment method
@@ -307,9 +314,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * enables all necessary devices (just CardReader in this case).
 	 * This is Step 2 of Pay with Credit use-case.
 	 */
-	public void enableCardPayment(BigDecimal amount) {
+	public void enableCardPayment() {
 		this.disableCashPayment();
-		this.amountToPayCard = amount;
 		this.station.cardReader.enable(); 
 	}
 	
