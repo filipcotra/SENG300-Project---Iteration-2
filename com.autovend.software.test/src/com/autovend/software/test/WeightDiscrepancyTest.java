@@ -79,7 +79,12 @@ public class WeightDiscrepancyTest {
 	
 	@Test
 	public void weightDiscrepancyNormalTest() {
-		
+		Barcode marsBarWeightedBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
+		BarcodedUnit mbWeighted = new BarcodedUnit(marsBarWeightedBarcode, 20);
+		station.mainScanner.scan(mb);
+		station.baggingArea.add(mbWeighted);
+		assertTrue(customerIO.customerWeightDiscrepancySignal);
+		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
 	}
 		
 	class MyCustomerIO implements CustomerIO {
