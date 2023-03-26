@@ -267,6 +267,9 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 	
+	/*
+	 * Method used to refillInk once lowInk is detected, if so enough ink is added to fill the ink storage to the maximum amount
+	 */
 	public void refillInk() throws OverloadException {
 		if(this.lowInk == true) {
 			printer.addInk(2^20 - this.inkRemaining);
@@ -279,6 +282,9 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 	
+	/*
+	 * Method used to refillInk once lowPaper is detected, if so enough paper is added to fill the paper storage to the maximum amount
+	 */
 	public void refillPaper() throws OverloadException {
 		if(this.lowPaper == true) {
 			printer.addPaper(2^10 - this.paperRemaining);
@@ -291,10 +297,16 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 	
+	/*
+	 * A getter to return this.lowInk to check if lowInk() is called
+	 */
 	public boolean getLowInk(){
 		return this.lowInk;
 	}
-
+	
+	/*
+	 * A getter to return this.lowPaper to check if lowPaper() is called
+	 */
 	public boolean getLowPaper(){
 		return this.lowPaper;
 	}
