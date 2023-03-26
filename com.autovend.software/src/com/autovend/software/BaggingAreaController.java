@@ -19,7 +19,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	PaymentControllerLogic paymentController;
 	public boolean ownBags = false;
 	public boolean bagAccept = false;
-	double expectedWeight; // The expected weight of the self checkout station when an item is scanned
+	public double expectedWeight; // The expected weight of the self checkout station when an item is scanned
 	double actualWeight; // The actual weight of the self checkout station when an item is scanned
 	public boolean weightDiscrepancy = false;
 	public boolean purchasingBags;

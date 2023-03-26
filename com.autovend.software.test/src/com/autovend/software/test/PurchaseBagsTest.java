@@ -15,6 +15,7 @@ import com.autovend.BarcodedUnit;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIOTempPurchaseOwnBags;
+import com.autovend.software.BaggingAreaController;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.CustomerIOTempPurchaseOwnBags;
 import com.autovend.software.PaymentControllerLogic;
@@ -29,7 +30,7 @@ public class PurchaseBagsTest {
 	SelfCheckoutStation station;
 	MyAttendantIO attendantIO;
 	MyCustomerIO customerIO;
-	PurchaseBags baggingAreaController;
+	BaggingAreaController baggingAreaController;
 	PaymentControllerLogic paymentController;
 	PrintReceipt printerController;
 
@@ -40,7 +41,7 @@ public class PurchaseBagsTest {
 		this.customerIO = new MyCustomerIO();
 		this.printerController = new PrintReceipt(station, station.printer, customerIO, attendantIO);
 		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, printerController);
-		this.baggingAreaController = new PurchaseBags(station, customerIO, attendantIO, paymentController);
+		this.baggingAreaController = new BaggingAreaController(station, customerIO, attendantIO, paymentController);
 	}
 	
 	@After
