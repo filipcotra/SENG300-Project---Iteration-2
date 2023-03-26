@@ -23,6 +23,7 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 		this.customerIO = customerIO;
 		this.attendantIO = attendantIO;
 		this.paymentController = paymentController;
+		this.station.baggingArea.register(this);
 	}
 	
 	/**
