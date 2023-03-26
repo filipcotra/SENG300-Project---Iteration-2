@@ -568,7 +568,6 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 				this.setChangeDue(this.getChangeDue().subtract(BigDecimal.valueOf(denom)));
 				/** this.suspend should never be true here */
 				if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
-					this.dispenseChange();
 				}
 				/** this.suspend should never be true here */
 				else if(this.suspended == false) {

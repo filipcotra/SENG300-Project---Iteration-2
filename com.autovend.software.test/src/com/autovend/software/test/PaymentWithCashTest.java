@@ -9,6 +9,7 @@
 package com.autovend.software.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 /*
  * Open issues:
@@ -34,6 +35,7 @@ import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.Card.CardData;
 import com.autovend.Coin;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
@@ -56,6 +58,7 @@ import com.autovend.devices.observers.CoinSlotObserver;
 import com.autovend.devices.observers.CoinTrayObserver;
 import com.autovend.devices.observers.CoinValidatorObserver;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.BankIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -71,6 +74,7 @@ public class PaymentWithCashTest {
 	MyCoinTrayObserver coinTrayObserver;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
+	BankIO bank;
 	Bill[] fiveDollarBills;
 	Bill[] tenDollarBills;
 	Bill[] twentyDollarBills;
@@ -103,6 +107,7 @@ public class PaymentWithCashTest {
 	Boolean attendantSignalled;
 	Boolean coinFalseNegative;
 	Boolean billFalseNegative;
+	Boolean customerActive;
 
 /* ---------------------------------- Stubs ---------------------------------------------------*/
 	
@@ -144,7 +149,7 @@ public class PaymentWithCashTest {
 
 		@Override
 		public void reactToBillRemovedEvent(BillDispenser dispenser, Bill bill) {
-			ejectedBills.add(bill.getValue());		
+			ejectedBills.add(bill.getValue());	
 			
 		}
 
@@ -340,6 +345,11 @@ public class PaymentWithCashTest {
 			}
 			
 		}
+		
+		@Override
+		public void setCardPaymentAmount(BigDecimal amount) {
+			paymentController.setCardPaymentAmount(amount);
+		}
 
 		@Override
 		public void transactionFailure() {
@@ -370,6 +380,40 @@ public class PaymentWithCashTest {
 				
 			}
 	}
+	
+	class MyBankIO implements BankIO {
+
+		@Override
+		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public void completeTransaction(int holdNumber) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void blockCard(CardData card) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void releaseHold(CardData data) {
+			// TODO Auto-generated method stub
+			
+		}
+
+}
 	
 	class MyBillSlotObserver implements BillSlotObserver{
 
@@ -457,7 +501,9 @@ public class PaymentWithCashTest {
 		@Override
 		public void reactToCoinAddedEvent(CoinTray tray) {
 			this.device = tray;
-			customer.removeCoin(tray);
+			if (customerActive) {
+				customer.removeCoin(tray);
+			}
 		}
 		
 	}
@@ -488,6 +534,7 @@ public class PaymentWithCashTest {
 						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
+		bank = new MyBankIO();
 		ejectedBills = new ArrayList<Integer>();
 		ejectedCoins = new ArrayList<BigDecimal>();
 		/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
@@ -534,10 +581,11 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
 		coinFalseNegative = true;
 		billFalseNegative = true;
+		customerActive = true;
 		billObserver = new MyBillSlotObserver();
 		selfCheckoutStation.billInput.register(billObserver);
 	}
@@ -579,6 +627,8 @@ public class PaymentWithCashTest {
 		paymentController = null;
 		billFalseNegative = true;
 		coinFalseNegative = true;
+		customerActive = true;
+		
 	}
 
 /* ---------------------------------- Tests ---------------------------------------------------*/
@@ -1565,7 +1615,6 @@ public class PaymentWithCashTest {
 		paymentController.setCartTotal(BigDecimal.valueOf(10));
 		while(billFalseNegative) {
 			selfCheckoutStation.billInput.accept(billFifty);
-			System.out.println("After accept");
 		}
 		assertEquals("40.0",paymentController.getTotalChange());
 		// Due to the hardware bug noted above, the payment controller is not updating the change due
@@ -1576,17 +1625,16 @@ public class PaymentWithCashTest {
 		assertTrue(attendantSignalled);
 	}
 	
-	/* Test Case: When more than 20 coins are dispensed at once, ensure that customer is collecting them
-	 * through the calls to customerIO within the controller.
+	/* Test Case: When more than 20 coins are dispensed at once, coin tray will overflow.
 	 * 
 	 * Description: Will pay $2 when the charge is $0.25, so that the change is
 	 * $1.75. All denominations of coins will be emptied except for $0.05. 
 	 * 
-	 * Expected: Expecting $1.75 of change to be dispensed as 35 coins, since the customer
-	 * will be emptying the coin tray to ensure all coins can be dispensed.
+	 * Expected: Expecting $1.00 of change to be dispensed as 20 coins, and the station suspended 
+	 * with the attendant signaled as $0.75 remains to be given but no space for the coins.
 	 */
 	@Test
-	public void coinTrayLotsOfCoins() {
+	public void coinTrayOverflow() {
 		// Simulate customer selecting Cash payment method
 		customer.selectPaymentMethod("Cash");
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
@@ -1605,6 +1653,55 @@ public class PaymentWithCashTest {
 		
 		coinTrayObserver = new MyCoinTrayObserver();
 		selfCheckoutStation.coinTray.register(coinTrayObserver);
+		// Set customerActive to false, to simulate them not paying attention as the coin tray overflows!
+		customerActive = false;
+		
+		paymentController.setCartTotal(BigDecimal.valueOf(0.25));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		
+		assertEquals("1.75",paymentController.getTotalChange());
+		assertEquals("0.75",""+paymentController.getChangeDue());
+		assertEquals("[0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05]",ejectedCoins.toString());
+		assertTrue(attendantSignalled);
+	}
+	
+	/* Test Case: When more than 20 coins are dispensed at once, but 
+	 * customer is collecting each coin as it comes out.
+	 * 
+	 * Description: Will pay $2 when the charge is $0.25, so that the change is
+	 * $1.75. All denominations of coins will be emptied except for $0.05. 
+	 * 
+	 * Expected: Expecting $1.75 of change to be dispensed as 35 coins, since the customer
+	 * will be emptying the coin tray to ensure all coins can be dispensed.
+	 */
+	@Test
+	public void coinTrayActiveCustomer() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash");
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		// Emptying other coinDispensers
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
+		
+		// Register relevant observers
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		
+		coinTrayObserver = new MyCoinTrayObserver();
+		selfCheckoutStation.coinTray.register(coinTrayObserver);
+		// Set customerActive to false, to simulate them paying attention to the coins and grabbing them
+		// as they are dispensed into the tray
+		customerActive = true;
 		
 		paymentController.setCartTotal(BigDecimal.valueOf(0.25));		
 		while(coinFalseNegative) {
@@ -1620,5 +1717,6 @@ public class PaymentWithCashTest {
 				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
 				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
 				+ "0.05, 0.05, 0.05, 0.05, 0.05]",ejectedCoins.toString());
+		assertFalse(attendantSignalled);
 	}
 }

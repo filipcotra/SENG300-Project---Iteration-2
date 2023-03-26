@@ -92,4 +92,9 @@ public interface CustomerIO {
 	 *signals that the transaction failed 
 	 */
 	public void transactionFailure();
+
+	/* 
+	 * Simulates the customer entering the amount they wish to pay by card
+	 */
+	public void setCardPaymentAmount(BigDecimal amount);
 }
