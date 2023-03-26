@@ -129,6 +129,9 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 			if (attendantIO.approveWeightDiscrepancy()) {
 				this.unblockSystem(); // Unblock the system
 				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
+				if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
+					this.finishedPurchasingBags();
+				}
 			}
 			// If they don't approve, then remain blocked
 			else {
