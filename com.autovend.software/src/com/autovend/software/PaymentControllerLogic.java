@@ -376,6 +376,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * added. (Step 2, Step 3, Step 5, Step 6)
 	 */
 	public void payCash(BigDecimal cashValue) {
+		this.enableCashPayment();
 		this.updateAmountPaid(cashValue);
 		this.setCartTotal(this.getCartTotal().subtract(cashValue));
 		myCustomer.showUpdatedTotal(this.getCartTotal());
@@ -384,9 +385,11 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 			this.setChangeDue(BigDecimal.valueOf(0.0).subtract(this.getCartTotal()));
 			this.setTotalChange(this.getChangeDue());
 			this.setCartTotal(BigDecimal.valueOf(0.0)); //Set cart total after change has been calculated.
+			/** this.suspend should never be true here */
 			if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
 				this.dispenseChange();
 			}
+			/** this.suspend should never be true here */
 			else if(this.suspended == false) {
 				this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 			}
@@ -397,7 +400,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	// implements the pay with credit use case. trigger: customer must with to pay with credit
 	public void payCredit(BigDecimal amountPaid, Card card, String pin, BankIO bank) throws IOException {
 		//step 2: enable card reader
-		station.cardReader.enable();
+		this.enableCardPayment();
 		//step 3: passing card and PIN to card reader
 		while (true) {
 			try {
@@ -440,7 +443,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	// implements the pay with debit use case. trigger: customer must with to pay with debit
 		public void payDebit(BigDecimal amountPaid, Card card, String pin, BankIO bank) throws IOException {
 			//step 2: enable card reader
-			station.cardReader.enable();
+			this.enableCardPayment();
 			//step 3: passing card and PIN to card reader
 			while (true) {
 				try {
@@ -521,10 +524,27 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	public void reactToBillsFullEvent(BillDispenser dispenser) {
 		// Ignoring in this iteration
 	}
-
+	
+	/**
+	 * This does the same thing as reactToBillRemovedEvent, just in the case that
+	 * the dispenser becomes empty. Change is still updated, just in a bit of a 
+	 * roundabout way.
+	 */
 	@Override
 	public void reactToBillsEmptyEvent(BillDispenser dispenser) {
-		// Ignoring in this iteration
+		for(int denom : this.denominations) {
+			if(this.dispensers.get(denom).equals(dispenser)) {
+				this.setChangeDue(this.getChangeDue().subtract(BigDecimal.valueOf(denom)));
+				/** this.suspend should never be true here */
+				if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
+					this.dispenseChange();
+				}
+				/** this.suspend should never be true here */
+				else if(this.suspended == false) {
+					this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
+				}
+			}
+		}
 	}
 
 	@Override
@@ -543,9 +563,11 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	@Override
 	public void reactToBillRemovedEvent(BillDispenser dispenser, Bill bill) {
 		this.setChangeDue(this.getChangeDue().subtract(BigDecimal.valueOf(bill.getValue())));
+		/** this.suspend should never be true here */
 		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
 			this.dispenseChange();
 		}
+		/** this.suspend should never be true here */
 		else if(this.suspended == false) {
 			this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 		}
@@ -629,10 +651,15 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	}
 
 	/* ---------------- Coin Tray -----------------------*/
+	/**
+	 * When a coin is deposited to the tray, the customer should remove,
+	 * or at least think about removing, the coin. This is the only way
+	 * tray overload will be managed, as there is no specific documentation
+	 * on what should be done to prevent overflow or in the case of overflow.
+	 */
 	@Override
 	public void reactToCoinAddedEvent(CoinTray tray) {
-		// TODO Auto-generated method stub
-		
+		myCustomer.removeCoin(tray);
 	}
 
 	/* ---------------- Coin Validator ------------------*/

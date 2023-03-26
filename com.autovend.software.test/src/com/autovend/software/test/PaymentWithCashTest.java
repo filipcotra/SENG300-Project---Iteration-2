@@ -1513,11 +1513,6 @@ public class PaymentWithCashTest {
 	 * Expected: Expecting $35 of change to be dispensed, and the station suspended 
 	 * with the attendant signalled as $5 remains to be given.
 	 * 
-	 * HOWEVER, BUG FOUND IN HARDWARE, SO THIS TEST FAILS!
-	 * The bill dispenser hardware will not notify observers of a bill removed event when the 
-	 * dispenser is empty, which causes this issue. Note that the coin dispenser hardware 
-	 * correctly handles this case, which is why the issue does not appear in the coin version
-	 * of this test.
 	 */
 	@Test
 	public void partialBillNotEnoughChange() throws OverloadException {
@@ -1582,7 +1577,7 @@ public class PaymentWithCashTest {
 	 * $1.75. All denominations of coins will be emptied except for $0.05. 
 	 * 
 	 * Expected: Expecting $1.00 of change to be dispensed as 20 coins, and the station suspended 
-	 * with the attendant signalled as $0.75 remains to be given but no space for the coins.
+	 * with the attendant signaled as $0.75 remains to be given but no space for the coins.
 	 */
 	@Test
 	public void coinTrayOverflow() {
