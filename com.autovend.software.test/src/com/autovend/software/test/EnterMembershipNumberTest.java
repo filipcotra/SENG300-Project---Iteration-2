@@ -90,6 +90,30 @@ public class EnterMembershipNumberTest {
 		public void notifyBadMembershipNumberCustomerIO() {
 			System.out.println("Invalid Membership Number. Please try again or cancel.");
 		}
+
+		@Override
+		public void signalPurchaseBags(int quantity) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalFinishedPurchasingBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalReadyForInteraction() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPutPurchasedBagsOnBaggingArea() {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	
