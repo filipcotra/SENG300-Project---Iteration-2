@@ -138,7 +138,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 				this.blockSystem();
 			}
 		} else { // If there is no discrepancy then unblock the system
-			if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
+			if (purchasingBags == true) {	// if purchased bags, call to finishedPurchasingBags
 				this.finishedPurchasingBags();
 			}
 			this.unblockSystem(); // Step 7, unblock the system 
