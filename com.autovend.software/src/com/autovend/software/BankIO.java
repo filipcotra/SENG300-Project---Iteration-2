@@ -14,8 +14,10 @@ public interface BankIO {
 	
 	public void completeTransaction(int holdNumber);
 	
-	public void blockCard(CardData card);
+	public void blockCard(Card card);
 
 	public void releaseHold(CardData data);
+
+	public boolean connectionStatus();
 
 }

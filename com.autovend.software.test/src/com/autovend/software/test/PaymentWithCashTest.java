@@ -35,6 +35,7 @@ import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.Card;
 import com.autovend.Card.CardData;
 import com.autovend.Coin;
 import com.autovend.devices.AbstractDevice;
@@ -330,17 +331,11 @@ public class PaymentWithCashTest {
 		}
 
 		@Override
-		public String getPin() {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
 		public void selectPaymentMethod(String paymentMethod) {
 			if (paymentMethod.equals("Cash")) {
 				paymentController.enableCashPayment();
 			}
-			else if(paymentMethod.equals("Card")) {
+			else if(paymentMethod.equals("Credit") || paymentMethod.equals("Debit")) {
 				paymentController.enableCardPayment();
 			}
 			
@@ -355,6 +350,12 @@ public class PaymentWithCashTest {
 		public void transactionFailure() {
 			// TODO Auto-generated method stub
 			
+		}
+
+		@Override
+		public Card getCustomerCard() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	
 	}
@@ -400,17 +401,23 @@ public class PaymentWithCashTest {
 			// TODO Auto-generated method stub
 			
 		}
-
+		
 		@Override
-		public void blockCard(CardData card) {
+		public void releaseHold(CardData data) {
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void releaseHold(CardData data) {
+		public void blockCard(Card card) {
 			// TODO Auto-generated method stub
 			
+		}
+
+		@Override
+		public boolean connectionStatus() {
+			// TODO Auto-generated method stub
+			return false;
 		}
 
 }

@@ -27,6 +27,7 @@ import com.autovend.CreditCard;
 import com.autovend.DebitCard;
 import com.autovend.InvalidPINException;
 import com.autovend.Card.CardData;
+import com.autovend.Card.CardInsertData;
 import com.autovend.ChipFailureException;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
@@ -81,7 +82,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	private BillSlot input;
 	private Boolean suspended;
 	private BigDecimal amountToPayCard; // The customer should indicate this
-	BankIO myBank;
+	private BankIO myBank;
+	private CardReader cardReader;
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -132,6 +134,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.suspended = false;
 		this.myBank = bank;
 		this.amountToPayCard = BigDecimal.ZERO; // By default
+		this.cardReader = station.cardReader;
+		this.cardReader.register(this);
 	}
 
 /* ------------------------ General Methods --------------------------------------------------*/
@@ -326,6 +330,13 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.station.cardReader.disable();
 	}
 	
+	/**
+	 * Simulates connecting to the bank.
+	 */
+	public boolean connectToBank() {
+		return this.myBank.connectionStatus();
+	}
+	
 /* ------------------------ Cash Payment Methods ---------------------------------------------*/	
 	
 	/**
@@ -451,16 +462,17 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		creditHoldNumber = this.myBank.creditCardTransaction(data, this.amountToPayCard);
 		if(creditHoldNumber != 0) { // 0 indicates non-authorized
 			int tries = 0;
-			while(tries < 5) // Exception 3
-			try {	
-				this.myBank.completeTransaction(creditHoldNumber);
-				transactionCompleted = true;
-			} catch(Exception e) {
-				tries++;
-				
-				try {	
-					TimeUnit.SECONDS.sleep(20);
-				} catch(Exception exc) {
+			while(tries < 5) { // Exception 3
+				if(!this.connectToBank()) {
+					tries++;
+					try {	
+						TimeUnit.SECONDS.sleep(20);
+					} catch(Exception exc) {}
+				}
+				else {
+					myBank.completeTransaction(creditHoldNumber);
+					transactionCompleted = true;
+					break;
 				}
 			}
 			if(transactionCompleted) {
@@ -483,40 +495,53 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	public void payDebit(CardReader reader, CardData data) {
 		int debitHoldNumber;
 		Boolean transactionCompleted = false;;
-		if(this.myBank == null) { // Exception 1
+		if(!this.connectToBank()) { // Exception 1
 			myCustomer.transactionFailure();
 			reader.remove();
 		}
-		debitHoldNumber = this.myBank.debitCardTransaction(data, this.amountToPayCard);
+		debitHoldNumber = myBank.debitCardTransaction(data, this.amountToPayCard);
 		if(debitHoldNumber != 0) { // 0 indicates non-authorized
 			int tries = 0;
-			while(tries < 5) // Exception 3
-			try {	
-				this.myBank.completeTransaction(debitHoldNumber);
-				transactionCompleted = true;
-			} catch(Exception e) {
-				tries++;
-				
-				try {	
-					TimeUnit.SECONDS.sleep(20);
-				} catch(Exception exc) {
+			while(tries < 5) { // Exception 3
+				if(!this.connectToBank()) {
+					tries++;
+					try {	
+						TimeUnit.SECONDS.sleep(20);
+					} catch(Exception exc) {}
+				}
+				else {
+					myBank.completeTransaction(debitHoldNumber);
+					transactionCompleted = true;
+					break;
 				}
 			}
 			if(transactionCompleted) {
 				this.updateAmountPaid(this.amountToPayCard);
 				this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
 				reader.remove();
-				myCustomer.payWithCreditComplete(this.amountToPayCard);
+				myCustomer.payWithDebitComplete(this.amountToPayCard);
 				this.amountToPayCard = BigDecimal.ZERO; // Reset
 			}
 			else {
 				myBank.releaseHold(data);
 			}
 		}
-		else {
+		else { // Exception 1
 			myCustomer.transactionFailure();
 			reader.remove();
 		}
+	}
+	
+	public void blockCardAtBank(Card card) {
+		int counter = 0;
+		while(counter < 10)
+			if(!this.connectToBank()) {
+				counter++;
+			}
+			else {
+				myBank.blockCard(card);
+				break;
+			}
 	}
 	
 /* ------------------------ Observer Overrides -----------------------------------------------*/
@@ -711,7 +736,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	/* ---------------- Card Reader --------------------*/
 	@Override
 	public void reactToCardInsertedEvent(CardReader reader) {
-		
+		// Ignoring in this iteration
 	}
 	
 	@Override

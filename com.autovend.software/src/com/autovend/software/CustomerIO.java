@@ -11,6 +11,7 @@ package com.autovend.software;
 import java.math.BigDecimal;
 
 import com.autovend.BarcodedUnit;
+import com.autovend.Card;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.CoinTray;
 
@@ -19,7 +20,6 @@ import com.autovend.devices.CoinTray;
  *
  */
 public interface CustomerIO {
-		
 	/**
 	 * Simulates a customer scanning an item.
 	 * This interaction is on Step 1 of add item by scanning.
@@ -78,12 +78,6 @@ public interface CustomerIO {
 	public void payWithDebitComplete(BigDecimal amountDue);
 	
 	/*
-	 * Simulates getting the pin from the customer
-	 */
-	public String getPin();
-	
-	
-	/*
 	 * Simualates the customer selecting a payment method, to enable required devices
 	 */
 	public void selectPaymentMethod(String paymentMethod);
@@ -97,4 +91,9 @@ public interface CustomerIO {
 	 * Simulates the customer entering the amount they wish to pay by card
 	 */
 	public void setCardPaymentAmount(BigDecimal amount);
+	
+	/*
+	 * Will simulate customer inserting the card
+	 */
+	public Card getCustomerCard();
 }
