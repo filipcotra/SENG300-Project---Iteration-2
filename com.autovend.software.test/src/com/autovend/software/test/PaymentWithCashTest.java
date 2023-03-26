@@ -342,6 +342,12 @@ public class PaymentWithCashTest {
 			}
 			
 		}
+
+		@Override
+		public void transactionFailure() {
+			// TODO Auto-generated method stub
+			
+		}
 	
 	}
 	

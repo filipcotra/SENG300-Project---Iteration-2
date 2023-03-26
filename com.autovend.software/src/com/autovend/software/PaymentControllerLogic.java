@@ -22,6 +22,8 @@ import com.autovend.Bill;
 import com.autovend.BlockedCardException;
 import com.autovend.Card;
 import com.autovend.Coin;
+import com.autovend.CreditCard;
+import com.autovend.DebitCard;
 import com.autovend.InvalidPINException;
 import com.autovend.Card.CardData;
 import com.autovend.ChipFailureException;
@@ -395,7 +397,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	
 /* ------------------------ Pay with Credit --------------------------------------------------*/
 	// implements the pay with credit use case. trigger: customer must with to pay with credit
-	public void payCredit(BigDecimal amountPaid, Card card, String pin, BankIO bank) throws IOException {
+	public void payCredit(BigDecimal amountPaid, CreditCard card, String pin, BankIO bank) throws IOException {
 		//step 2: enable card reader
 		station.cardReader.enable();
 		//step 3: passing card and PIN to card reader
@@ -421,6 +423,13 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
 		//should signal back the hold number
 		int holdNumber = bank.creditCardTranscation(card, amountPaid);
+		//hold number of 0 means the transaction failed
+		if(holdNumber == 0) {
+			myCustomer.transactionFailure();
+			station.cardReader.remove();
+			station.cardReader.disable();
+			return;
+		}
 		//step 8: the system should signal the bank to complete the transaction
 		bank.completeTransaction(holdNumber);
 		//step 10: Reduces the remaining amount due by the amount of the transaction
@@ -438,7 +447,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	}
 	
 	// implements the pay with debit use case. trigger: customer must with to pay with debit
-		public void payDebit(BigDecimal amountPaid, Card card, String pin, BankIO bank) throws IOException {
+		public void payDebit(BigDecimal amountPaid, DebitCard card, String pin, BankIO bank) throws IOException {
 			//step 2: enable card reader
 			station.cardReader.enable();
 			//step 3: passing card and PIN to card reader
@@ -456,6 +465,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 					continue;
 				//step 5: if the pin is entered wrong three times, move on to RepeatedBadPin use case
 				} catch (BlockedCardException e2) {
+					myCustomer.transactionFailure();
 					RepeatedBadPin(bank, card);
 					station.cardReader.disable();
 					return;
@@ -464,6 +474,13 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 			//step 5 and 7: signal to the bank with card data and amount to be paid, and the bank
 			//should signal back the hold number
 			int holdNumber = bank.debitCardTranscation(card, amountPaid);
+			//hold number of 0 means the transaction failed
+			if(holdNumber == 0) {
+				myCustomer.transactionFailure();
+				station.cardReader.remove();
+				station.cardReader.disable();
+				return;
+			}
 			//step 8: the system should signal the bank to complete the transaction
 			bank.completeTransaction(holdNumber);
 			//step 10: Reduces the remaining amount due by the amount of the transaction
