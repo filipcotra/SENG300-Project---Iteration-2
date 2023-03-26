@@ -364,4 +364,23 @@ public class ReceiptPrinterTest {
 		assertTrue(!receiptPrinterController.getLowPaper());
 	}
 	
+	/*
+	 * Test: to see if the paper ink and low paper works together
+	 * Expected: low paper and low ink is called, attendant refills and therefore low paper and low ink should be false
+	 * Result: low paper is false and low ink is false
+	 */
+	@Test public void lowBothTest() {
+		int paper = 8;
+		int ink = 70;
+		try {
+			selfCheckoutStation.printer.addInk(ink);
+			selfCheckoutStation.printer.addPaper(paper);
+			receiptPrinterController.setContents(ink, paper);
+		} catch (OverloadException e) {}
+		change = "3.00";
+		amountPaid = "45.00";
+		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
+		assertTrue(!receiptPrinterController.getLowPaper());
+		assertTrue(!receiptPrinterController.getLowInk());
+	}
 }
