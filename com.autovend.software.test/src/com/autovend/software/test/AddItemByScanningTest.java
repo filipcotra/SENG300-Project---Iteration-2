@@ -134,6 +134,12 @@ public class AddItemByScanningTest {
 			
 		}
 
+		@Override
+		public void transactionFailure() {
+			// TODO Auto-generated method stub
+			
+		}
+
 
 		
 	}

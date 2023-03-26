@@ -30,6 +30,7 @@ public class payWithCardTest {
 	int CCardComplete = 0;
 	int DCardComplete = 0;
 	int BlockedCard = 0;
+	int failedTransaction = 0;
 	
 	class MyCustomerIO implements CustomerIO {
 
@@ -105,20 +106,31 @@ public class payWithCardTest {
 			}
 			
 		}
+		@Override
+		public void transactionFailure() {
+			// TODO Auto-generated method stub
+			failedTransaction++;
+		}
 	}
 		
 	class myBankIO implements BankIO{
+		
+		int holdNumber;
+		
+		public myBankIO(int holdNumber) {
+			this.holdNumber = holdNumber;
+		}
 
 		@Override
 		public int creditCardTranscation(Card card, BigDecimal amountPaid) {
 			// TODO Auto-generated method stub
-			return 0;
+			return holdNumber;
 		}
 
 		@Override
 		public int debitCardTranscation(Card card, BigDecimal amountPaid) {
 			// TODO Auto-generated method stub
-			return 0;
+			return holdNumber;
 		}
 
 		@Override
@@ -176,7 +188,7 @@ public class payWithCardTest {
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
-		bank = new myBankIO();
+		bank = new myBankIO(1);
 	}
 	
 	@After
@@ -280,5 +292,29 @@ public class payWithCardTest {
 		assertEquals(CCardComplete, 1000);
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20000.0",paymentController.getAmountPaid());
+	}
+	
+	@Test
+	public void payCreditCardTransactionFailure() throws IOException {
+		bank = new myBankIO(0);
+
+		customer.selectPaymentMethod("Card");
+		paymentController.setCartTotal(new BigDecimal("20"));
+		paymentController.payCredit(new BigDecimal("20"), CCard, "4321", bank);
+		assertEquals(failedTransaction, 1);
+		assertTrue(new BigDecimal("20").compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("0.0",paymentController.getAmountPaid());
+	}
+	
+	@Test
+	public void payDebitCardTransactionFailure() throws IOException {
+		bank = new myBankIO(0);
+
+		customer.selectPaymentMethod("Card");
+		paymentController.setCartTotal(new BigDecimal("20"));
+		paymentController.payDebit(new BigDecimal("20"), DCard, "4321", bank);
+		assertEquals(failedTransaction, 1);
+		assertTrue(new BigDecimal("20").compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("0.0",paymentController.getAmountPaid());
 	}
 }

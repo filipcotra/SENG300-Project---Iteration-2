@@ -159,6 +159,12 @@ class MyCustomerIO implements CustomerIO {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void transactionFailure() {
+		// TODO Auto-generated method stub
+		
+	}
 		
 		
 	}

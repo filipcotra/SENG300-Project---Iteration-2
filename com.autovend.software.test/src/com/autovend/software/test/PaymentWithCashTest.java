@@ -342,6 +342,12 @@ public class PaymentWithCashTest {
 			}
 			
 		}
+
+		@Override
+		public void transactionFailure() {
+			// TODO Auto-generated method stub
+			
+		}
 	
 	}
 	
@@ -1448,8 +1454,11 @@ public class PaymentWithCashTest {
 			selfCheckoutStation.billInput.accept(billFifty);
 		}
 		assertEquals("35.0",paymentController.getTotalChange());
-		assertTrue(BigDecimal.valueOf(0.0).compareTo(paymentController.getChangeDue()) == 0);
-		assertEquals("[5, 10, 20]",ejectedBills.toString());
+		// Due to the hardware bug noted above, the payment controller is not updating the change due
+		// as a bill removed from the dispenser event is not announced
+		assertEquals("0.0",""+paymentController.getChangeDue());
+		// However, the bill is still ejected to the output slot, so the ejected bills as tracked as expected
+		assertEquals("[20, 10, 5]",ejectedBills.toString());
 		assertFalse(attendantSignalled);
 	}
 	
@@ -1566,8 +1575,11 @@ public class PaymentWithCashTest {
 			System.out.println("After accept");
 		}
 		assertEquals("40.0",paymentController.getTotalChange());
-		assertTrue(BigDecimal.valueOf(5.00).compareTo(paymentController.getChangeDue()) == 0);
-		assertEquals("[5, 10, 20]",ejectedBills.toString());
+		// Due to the hardware bug noted above, the payment controller is not updating the change due
+		// as a bill removed from the dispenser event is not announced
+		assertEquals("5.0",""+paymentController.getChangeDue());
+		// However, the bill is still ejected to the output slot, so the ejected bills as tracked as expected
+		assertEquals("[20, 10, 5]",ejectedBills.toString());
 		assertTrue(attendantSignalled);
 	}
 	

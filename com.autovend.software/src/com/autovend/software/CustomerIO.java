@@ -87,4 +87,9 @@ public interface CustomerIO {
 	 * Simualates the customer selecting a payment method, to enable required devices
 	 */
 	public void selectPaymentMethod(String paymentMethod);
+	
+	/*
+	 *signals that the transaction failed 
+	 */
+	public void transactionFailure();
 }
