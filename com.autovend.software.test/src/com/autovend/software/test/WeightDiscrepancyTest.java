@@ -96,6 +96,8 @@ public class WeightDiscrepancyTest {
 		assertTrue(customerIO.customerWeightDiscrepancySignal);
 		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
 		attendantIO.approveWeightDiscrepancy(customerIO);
+		assertFalse(customerIO.customerWeightDiscrepancySignal);
+		assertFalse(attendantIO.attendantWeightDiscrepancySignal);
 	}
 		
 	class MyCustomerIO implements CustomerIO {
