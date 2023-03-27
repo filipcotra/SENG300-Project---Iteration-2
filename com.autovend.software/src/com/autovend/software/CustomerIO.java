@@ -110,4 +110,19 @@ public interface CustomerIO {
 	 * Signals to the customer that the membership number entered was invalid
 	 */
 	public void notifyBadMembershipNumberCustomerIO();
+	
+	/**
+	 * Simulates the customer selecting to use their own bags
+	 */
+	public void selectAddOwnBags();
+	
+	/**
+	 * Simulates the customer being indicated/notified to add their own bags to bagging area
+	 */
+	public void indicateAddOwnBags();
+	
+	/**
+	 * Simulates the customer being indicated/notified to contine after an attendant either approved or denied them from adding bags to bagging area
+	 */
+	public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags();
 }
