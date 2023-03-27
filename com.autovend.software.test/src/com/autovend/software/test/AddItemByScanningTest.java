@@ -118,16 +118,66 @@ public class AddItemByScanningTest {
 			// TODO Auto-generated method stub
 		}
 
+		@Override
+		public void notifyWeightDiscrepancyCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPurchaseBags(int quantity) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalFinishedPurchasingBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalReadyForInteraction() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPutPurchasedBagsOnBaggingArea() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public String getMembershipNumber() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean cancelMembershipInput() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void notifyBadMembershipNumberCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
 
 		
 	}
 	
 	class MyAttendantIO implements AttendantIO {
 
-		@Override
-		public boolean approveWeightDiscrepancy() {
-			return approveFlag;
-		}
 
 		@Override
 		public void printDuplicateReceipt() {
@@ -137,6 +187,30 @@ public class AddItemByScanningTest {
 
 		@Override
 		public void changeRemainsNoDenom(BigDecimal changeLeft) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyAttendantIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void approveWeightDiscrepancy(CustomerIO customerIO) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void checkAddedOwnBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void acceptOwnBags() {
 			// TODO Auto-generated method stub
 			
 		}
