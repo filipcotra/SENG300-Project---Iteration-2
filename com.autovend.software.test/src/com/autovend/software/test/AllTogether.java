@@ -26,7 +26,9 @@ import org.junit.Test;
 import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.Card;
 import com.autovend.Numeral;
+import com.autovend.Card.CardData;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
@@ -42,6 +44,7 @@ import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.BankIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -59,6 +62,7 @@ public class AllTogether {
 	MyBillSlotObserver billObserver;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
+	MyBankIO bank;
 	Bill[] fiveDollarBills;
 	Bill[] tenDollarBills;
 	Bill[] twentyDollarBills;
@@ -149,19 +153,25 @@ class MyCustomerIO implements CustomerIO {
 	}
 
 	@Override
-	public String getPin() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void selectPaymentMethod(String paymentMethod) {
+	public void transactionFailure() {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void transactionFailure() {
+	public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setCardPaymentAmount(BigDecimal amount) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void insertCard(Card card, String pin) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -191,6 +201,45 @@ class MyCustomerIO implements CustomerIO {
 
 		
 	}
+	
+	class MyBankIO implements BankIO {
+
+		@Override
+		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public void completeTransaction(int holdNumber) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void releaseHold(CardData data) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void blockCard(Card card) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean connectionStatus() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+	}
 	@Before
 	public void setup() {
 		// Setting up new print stream to catch printed output, used to test terminal output
@@ -206,6 +255,7 @@ class MyCustomerIO implements CustomerIO {
 						new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 				customer = new MyCustomerIO();
 				attendant = new MyAttendantIO();
+				bank = new MyBankIO();
 				ejectedBills = new ArrayList<Integer>();		
 				/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
 				 * Every dispenser has a max capacity of 100 
@@ -264,7 +314,7 @@ class MyCustomerIO implements CustomerIO {
 				
 				// Create and attach controllers to the station:
 				this.receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
 				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController);
 	}
 	/* 

@@ -23,12 +23,14 @@ import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.Card;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.OverloadException;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.CustomerIO;
+import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
 import com.autovend.software.test.PaymentWithCashTest.MyBillSlotObserver;
 import com.autovend.devices.DisabledException;
@@ -105,19 +107,25 @@ public class ReceiptPrinterTest {
 			}
 
 			@Override
-			public String getPin() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public void selectPaymentMethod(String paymentMethod) {
+			public void transactionFailure() {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void transactionFailure() {
+			public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void setCardPaymentAmount(BigDecimal amount) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void insertCard(Card card, String pin) {
 				// TODO Auto-generated method stub
 				
 			}
