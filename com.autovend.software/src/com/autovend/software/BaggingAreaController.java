@@ -47,7 +47,6 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		this.station.billStorage.disable();
 		this.station.billValidator.disable();
 	}
-	customerIO
 	/**
 	 * Helper function to unblock the system by enabling all devices besides the bagging area.
 	 */
@@ -112,7 +111,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		this.expectedWeight = this.actualWeight;
 		if (purchasingBags == true) {
 			this.finishedPurchasingBags();
-		}customerIO
+		}
 	}
 
 	@Override
@@ -176,9 +175,9 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	public boolean addOwnBags() {
 			attendantIO.checkAddedOwnBags();
 			return true;
-			}
 	}
 
 	public void selectAddOwnBags() {
 		customerIO.indicateAddOwnBags();
 	}
+}

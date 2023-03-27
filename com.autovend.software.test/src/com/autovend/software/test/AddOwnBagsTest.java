@@ -107,7 +107,6 @@ public class AddOwnBagsTest {
 		@Override
 		public void thankCustomer() {
 			// TODO Auto-generated method stub
-			bag
 		}
 
 		@Override
@@ -201,7 +200,9 @@ public void tearDown() {
 	pr = null;
 	paymentController = null;
 	bag = null;
-}wasCustomerIndicatedToUseOwnBags
+	wasCustomerIndicatedToUseOwnBags = false;
+	wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags = false;
+}
 
 @Test
 public void bagsAccepted() {
@@ -258,6 +259,7 @@ public void bagsAccepted() {
 	
 	@Test
 	public void wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags() {
+		bag.bagAccept = true;
 		attendantIO.checkAddedOwnBags();
 		assertTrue(wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags);
 	}
