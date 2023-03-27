@@ -749,6 +749,20 @@ public class PaymentWithCashTest {
 		}
 	}
 	
+	/* Testing that if card payment is selected, disabled exception will be thrown.
+	 * 
+	 */
+	@Test (expected = DisabledException.class)
+	public void attemptCashWhileDisabled() throws DisabledException, OverloadException {
+		// Simulate customer selecting Credit payment method, which should disable cash
+		customer.selectPaymentMethod("Credit", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		while(billFalseNegative) {	
+			selfCheckoutStation.billInput.accept(billTwenty);
+		}
+	}
+	
 	/* Test Case: An amount less than the cart total is paid via bill.
 	 * 
 	 * Description: The cart total is set at $100. $20 is paid in a single bill. 
@@ -1442,11 +1456,6 @@ public class PaymentWithCashTest {
 	 * Expected: Expecting $35 of change to be dispensed, and the station not suspended since
 	 * all change should be given out.
 	 * 
-	 * HOWEVER, BUG FOUND IN HARDWARE, SO THIS TEST FAILS!
-	 * The bill dispenser hardware will not notify observers of a bill removed event when the 
-	 * dispenser is empty, which causes this issue. Note that the coin dispenser hardware 
-	 * correctly handles this case, which is why the issue does not appear in the coin version
-	 * of this test.
 	 */
 	@Test
 	public void partialBillEnoughChange() throws DisabledException, OverloadException {
@@ -1499,10 +1508,7 @@ public class PaymentWithCashTest {
 			selfCheckoutStation.billInput.accept(billFifty);
 		}
 		assertEquals("35.0",paymentController.getTotalChange());
-		// Due to the hardware bug noted above, the payment controller is not updating the change due
-		// as a bill removed from the dispenser event is not announced
 		assertEquals("0.0",""+paymentController.getChangeDue());
-		// However, the bill is still ejected to the output slot, so the ejected bills as tracked as expected
 		assertEquals("[20, 10, 5]",ejectedBills.toString());
 		assertFalse(attendantSignalled);
 	}
@@ -1619,10 +1625,7 @@ public class PaymentWithCashTest {
 			selfCheckoutStation.billInput.accept(billFifty);
 		}
 		assertEquals("40.0",paymentController.getTotalChange());
-		// Due to the hardware bug noted above, the payment controller is not updating the change due
-		// as a bill removed from the dispenser event is not announced
 		assertEquals("5.0",""+paymentController.getChangeDue());
-		// However, the bill is still ejected to the output slot, so the ejected bills as tracked as expected
 		assertEquals("[20, 10, 5]",ejectedBills.toString());
 		assertTrue(attendantSignalled);
 	}

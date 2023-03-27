@@ -256,6 +256,7 @@ public class payWithCardTest {
 		bank = new MyBankIO();
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
+		//selfCheckoutStation = paymentController.station;
 		paymentController.setCartTotal(BigDecimal.ZERO);
 		connectionStatus = true;
 		falseNegative = true;
@@ -287,7 +288,7 @@ public class payWithCardTest {
 		while(falseNegative) {
 			customer.insertCard(CCard, "4321");
 		}
-		assertEquals(CCardComplete, 1);
+		assertEquals(1, CCardComplete);
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
 	}
@@ -306,7 +307,7 @@ public class payWithCardTest {
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
 		}
-		assertEquals(DCardComplete, 1);
+		assertEquals(1, DCardComplete);
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
 	}
@@ -326,7 +327,7 @@ public class payWithCardTest {
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
 		}
-		assertEquals(failedTransaction, 1);
+		assertEquals(1, failedTransaction);
 	}
 	
 	/**
@@ -344,7 +345,7 @@ public class payWithCardTest {
 		while(falseNegative) {
 			customer.insertCard(CCard, "4321");
 		}
-		assertEquals(failedTransaction, 1);
+		assertEquals(1, failedTransaction);
 	}
 	
 	/**
@@ -407,7 +408,7 @@ public class payWithCardTest {
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(CCard, "4321");
 		}
-		assertEquals(failedTransaction, 1);
+		assertEquals(1, failedTransaction);
 	}
 	
 	/**
@@ -470,7 +471,7 @@ public class payWithCardTest {
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(DCard, "4321");
 		}
-		assertEquals(failedTransaction, 1);
+		assertEquals(1, failedTransaction);
 	}
 	
 	/**
@@ -539,11 +540,11 @@ public class payWithCardTest {
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(CCard, "4321");
 		}
-		assertEquals(CCardComplete, 0);
+		assertEquals(0, CCardComplete);
 		// Checking to see if the connection was attempted a total of 6 times.
 		// This includes 1 check where it will return true, and then 5 where
 		// it will return false.
-		assertEquals(stubBank.times, 6);
+		assertEquals(6, stubBank.times);
 	}
 	
 	/**
@@ -612,11 +613,11 @@ public class payWithCardTest {
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(DCard, "4321");
 		}
-		assertEquals(DCardComplete, 0);
+		assertEquals(0, DCardComplete);
 		// Checking to see if the connection was attempted a total of 6 times.
 		// This includes 1 check where it will return true, and then 5 where
 		// it will return false.
-		assertEquals(stubBank.times, 6);
+		assertEquals(6, stubBank.times);
 	}
 	
 	/**
@@ -625,11 +626,14 @@ public class payWithCardTest {
 	 */
 	@Test
 	public void wrongPinFourTimes() {
+		customer.selectPaymentMethod("Credit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
 		for(int i = 0 ; i < 4 ; i++) {
 			customer.insertCard(CCard,  "1");
 			selfCheckoutStation.cardReader.remove();
 		}
-		assertEquals(this.BlockedCard, 1);
+		assertEquals(1, this.BlockedCard);
 	}
 	
 	/**
@@ -644,9 +648,9 @@ public class payWithCardTest {
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
 		}
-		assertEquals(DCardComplete, 0);
-		assertEquals(CCardComplete, 0);
-		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(0, DCardComplete);
+		assertEquals(0, CCardComplete);
+		assertEquals(BigDecimal.valueOf(20.0), paymentController.getCartTotal());
 		assertEquals("0.0",paymentController.getAmountPaid());
 	}
 	
@@ -661,9 +665,9 @@ public class payWithCardTest {
 		while(falseNegative) {
 			customer.insertCard(CCard, "4321");
 		}
-		assertEquals(DCardComplete, 0);
-		assertEquals(CCardComplete, 0);
-		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(0, DCardComplete);
+		assertEquals(0, CCardComplete);
+		assertEquals(BigDecimal.valueOf(20.0), paymentController.getCartTotal());
 		assertEquals("0.0",paymentController.getAmountPaid());
 	}
 	
@@ -679,5 +683,90 @@ public class payWithCardTest {
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
 		customer.insertCard(DCard, "4321");
+	}
+	
+	/**
+	 * Testing if the customer enters in the wrong pin, but the bank connection is faulty. 
+	 * If this happens 4 times, the card should be blocked normally, but expected not to
+	 * be since the bank was attempted to be reached more than 10 times to issue the block
+	 * unsuccessfully.
+	 */
+	@Test
+	public void wrongPinFourTimesNoBankConnnection() {
+		customer.selectPaymentMethod("Credit", paymentController);
+		connectionStatus = false;
+		for(int i = 0 ; i < 4 ; i++) {
+			customer.insertCard(CCard,  "1");
+			selfCheckoutStation.cardReader.remove();
+		}
+		assertEquals(0, this.BlockedCard);
+	}
+	
+	/**
+	 * Test to see if a connection error occurs after holding, should result in the hold
+	 * being released. This is the test for debit exception 3. Should result in no 
+	 * transaction being completed, but the connection should be attempted 5 times.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void wrongPinFourTimesBankConnnectionRestoredMidwayThrough() throws IOException {
+		class MyBankIOStub implements BankIO{
+			public int times = 0;
+			public int holdNumber;
+
+			@Override
+			public void completeTransaction(int holdNumber) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void blockCard(Card card) {
+				BlockedCard++;
+			}
+
+			@Override
+			public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public void releaseHold(CardData data) {
+				this.holdNumber = 0;
+				
+			}
+
+			@Override
+			public boolean connectionStatus() {
+				// This is making sure that after the fifth time is called, there will no longer be a connection issue.
+				if(this.times == 5) {
+					connectionStatus = true;
+				}
+				this.times++;
+				return connectionStatus;
+			}
+			
+		}
+		
+		MyBankIOStub stubBank = new MyBankIOStub();
+		// Creating new payment controller using the stub bank
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, stubBank, receiptPrinterController);
+		customer.selectPaymentMethod("Credit", paymentController);
+		connectionStatus = false;
+		// Attempt incorrect pin until it will become blocked
+		for(int i = 0 ; i < 4 ; i++) {
+			customer.insertCard(CCard,  "1");
+			selfCheckoutStation.cardReader.remove();
+		}
+		// Check that the card did become blocked, and that the bank was contacted 6 times before the connection
+		// was successful in order to issue the block
+		assertEquals(1, this.BlockedCard);
+		assertEquals(6, stubBank.times);
 	}
 }

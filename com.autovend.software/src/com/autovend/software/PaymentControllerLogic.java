@@ -473,7 +473,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 					if(!this.connectToBank()) {
 						tries++;
 						try {	
-							TimeUnit.SECONDS.sleep(20);
+							//TimeUnit.SECONDS.sleep(20);
 						} catch(Exception exc) {}
 					}
 					else {
@@ -516,7 +516,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 					if(!this.connectToBank()) {
 						tries++;
 						try {	
-							TimeUnit.SECONDS.sleep(20);
+							//TimeUnit.SECONDS.sleep(20);
 						} catch(Exception exc) {}
 					}
 					else {
