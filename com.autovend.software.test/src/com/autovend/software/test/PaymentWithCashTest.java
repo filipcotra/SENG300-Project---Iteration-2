@@ -282,6 +282,7 @@ public class PaymentWithCashTest {
 			
 		}
 		
+		// Allow customer to remove bill from slot
 		@Override
 		public void removeBill(BillSlot slot) {
 			slot.removeDanglingBill();
@@ -311,6 +312,7 @@ public class PaymentWithCashTest {
 			
 		}
 
+		// Allow customer to remove coins from tray
 		@Override
 		public void removeCoin(CoinTray tray) {
 			tray.collectCoins();
@@ -329,6 +331,8 @@ public class PaymentWithCashTest {
 			
 		}
 
+		// Allow customer to choose their choice of payment method, enabling the required
+		// hardware components depending on the selected method
 		@Override
 		public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
 			if (paymentMethod.equals("Cash")) {

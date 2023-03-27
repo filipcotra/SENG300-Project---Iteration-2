@@ -34,6 +34,8 @@ import com.autovend.software.test.PaymentWithCashTest.MyAttendantIO;
 import com.autovend.software.test.PaymentWithCashTest.MyCustomerIO;
 
 public class payWithCardTest {
+	
+	// Create variables to be used
 	int CCardComplete = 0;
 	int DCardComplete = 0;
 	int BlockedCard = 0;
@@ -50,6 +52,7 @@ public class payWithCardTest {
 	boolean falseNegative = true;
 	String paymentMethodSelected;
 	
+	// Set up a customerIO stub to use in test cases
 	class MyCustomerIO implements CustomerIO {
 		@Override
 		public void thankCustomer() {
@@ -57,6 +60,7 @@ public class payWithCardTest {
 			
 		}
 		
+		// Allow customer to remove bill from slot
 		@Override
 		public void removeBill(BillSlot slot) {
 			slot.removeDanglingBill();
@@ -86,22 +90,27 @@ public class payWithCardTest {
 			
 		}
 
+		// Allow customer to remove coins from tray
 		@Override
 		public void removeCoin(CoinTray tray) {
 			tray.collectCoins();
 			
 		}
 
+		// Confirm credit payment has been completed
 		@Override
 		public void payWithCreditComplete(BigDecimal amountDue) {
 			CCardComplete++;
 		}
 
+		// Confirm debit payment has been completed
 		@Override
 		public void payWithDebitComplete(BigDecimal amountDue) {
 			DCardComplete++;
 		}
 		
+		// Allow customer to choose their choice of payment method, enabling the required
+		// hardware components depending on the selected method
 		@Override
 		public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
 			if (paymentMethod.equals("Cash")) {
@@ -113,16 +122,21 @@ public class payWithCardTest {
 			paymentMethodSelected = paymentMethod;
 		}
 		
+		// Confirm if transaction failed
 		@Override
 		public void transactionFailure() {
 			failedTransaction++;
 		}
+		
+		// Allow customer to choose amount to pay with card
 		@Override
 		public void setCardPaymentAmount(BigDecimal amount) {
 			paymentController.setCardPaymentAmount(amount);
 			
 		}
 		
+		// Allow customer to insert card into card reader, catching exceptions
+		// if the card should be blocked, or if the card reader is disabled
 		@Override
 		public void insertCard(Card card, String pin) {
 			try {
@@ -139,8 +153,10 @@ public class payWithCardTest {
 		}
 	}
 		
+	// Set up bankIO stub to use in test cases
 	class MyBankIO implements BankIO{
 		
+		// hold number passed to and from bank before releasing funds on authorized transactions
 		public int holdNumber;
 
 		@Override
@@ -149,27 +165,32 @@ public class payWithCardTest {
 			
 		}
 
+		// Track if card is to be blocked
 		@Override
 		public void blockCard(Card card) {
 			BlockedCard++;
 		}
 
+		// Set test hold number to indicate that there is a hold for credit payment
 		@Override
 		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
 			return this.holdNumber = 1;
 		}
 
+		// Set test hold number to indicate that there is a hold for debit payment
 		@Override
 		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
 			return this.holdNumber = 1;
 		}
 
+		// Set test hold number to indicate that the hold has been released
 		@Override
 		public void releaseHold(CardData data) {
 			this.holdNumber = 0;
 			
 		}
 
+		// Confirm if the connection to the bank has been successfully made
 		@Override
 		public boolean connectionStatus() {
 			return connectionStatus;
@@ -177,6 +198,7 @@ public class payWithCardTest {
 		
 	}
 	
+	// Set up attendantIO stub to use in test cases
 	class MyAttendantIO implements AttendantIO {
 
 		@Override
@@ -197,6 +219,7 @@ public class payWithCardTest {
 		
 	}
 	
+	// Set up a card reader observer stub to use in test cases
 	class cardReaderObserverStub implements CardReaderObserver{
 
 		@Override
@@ -235,6 +258,8 @@ public class payWithCardTest {
 			
 		}
 
+		// Track if card was successfully inserted, to ensure random chip errors
+		// do not cause a test to fail when not being specifically tested
 		@Override
 		public void reactToCardDataReadEvent(CardReader reader, CardData data) {
 			falseNegative = false;
@@ -244,8 +269,10 @@ public class payWithCardTest {
 
 /* ---------------------------------- SetUp ---------------------------------------------------*/	
 	
+	// Set up before each test case
 	@Before
 	public void setUp() {
+		// Initialize an instance of our test classes to be used
 		selfCheckoutStation = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
 				new BigDecimal[] {new BigDecimal("0.05"),new BigDecimal("0.10"), new BigDecimal("0.25"),
 						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
@@ -256,13 +283,15 @@ public class payWithCardTest {
 		bank = new MyBankIO();
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
-		//selfCheckoutStation = paymentController.station;
 		paymentController.setCartTotal(BigDecimal.ZERO);
+		// Turn on connection to bank to start
 		connectionStatus = true;
+		// Loop variable to ensure that random chip failures do not interfere with testing
 		falseNegative = true;
 		selfCheckoutStation.cardReader.register(new cardReaderObserverStub());
 	}
 	
+	// Tear down after each test case
 	@After
 	public void teardown() {
 		selfCheckoutStation = null;
@@ -285,6 +314,7 @@ public class payWithCardTest {
 		customer.selectPaymentMethod("Credit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(CCard, "4321");
 		}
@@ -304,6 +334,7 @@ public class payWithCardTest {
 		customer.selectPaymentMethod("Debit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
 		}
@@ -320,10 +351,12 @@ public class payWithCardTest {
 	 */
 	@Test
 	public void failedConnectionExc2_Debit() throws IOException {
+		// Turn off connection to bank to start
 		connectionStatus = false;
 		customer.selectPaymentMethod("Debit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
 		}
@@ -342,6 +375,7 @@ public class payWithCardTest {
 		customer.selectPaymentMethod("Credit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(CCard, "4321");
 		}
@@ -405,6 +439,7 @@ public class payWithCardTest {
 		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
 		selfCheckoutStation2.cardReader.register(new cardReaderObserverStub());
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(CCard, "4321");
 		}
@@ -468,6 +503,7 @@ public class payWithCardTest {
 		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
 		selfCheckoutStation2.cardReader.register(new cardReaderObserverStub());
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(DCard, "4321");
 		}
@@ -537,6 +573,7 @@ public class payWithCardTest {
 		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
 		selfCheckoutStation2.cardReader.register(new cardReaderObserverStub());
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(CCard, "4321");
 		}
@@ -610,6 +647,7 @@ public class payWithCardTest {
 		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
 		selfCheckoutStation2.cardReader.register(new cardReaderObserverStub());
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			selfCheckoutStation2.cardReader.insert(DCard, "4321");
 		}
@@ -645,6 +683,7 @@ public class payWithCardTest {
 		customer.selectPaymentMethod("Credit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
 		}
@@ -655,13 +694,15 @@ public class payWithCardTest {
 	}
 	
 	/**
-	 * Testing that if debit is selected, credit payment will not occur.
+	 * Testing that if debit is selected, credit payment will not occur. Cart total should not 
+	 * change at all.
 	 */
 	@Test
 	public void selectDebitInsertCredit() {
 		customer.selectPaymentMethod("Debit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(CCard, "4321");
 		}
@@ -711,6 +752,8 @@ public class payWithCardTest {
 	 */
 	@Test
 	public void wrongPinFourTimesBankConnnectionRestoredMidwayThrough() throws IOException {
+		// Create new bankIO stub that will start without connection, but regain connection midway
+		// through the attempts to establish a connection
 		class MyBankIOStub implements BankIO{
 			public int times = 0;
 			public int holdNumber;
