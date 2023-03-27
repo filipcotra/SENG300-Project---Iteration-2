@@ -40,6 +40,7 @@ public class payWithCardTest {
 	PaymentControllerLogic paymentController;
 	PrintReceipt receiptPrinterController;
 	MyBankIO bank;
+	boolean connectionStatus;
 	
 	class MyCustomerIO implements CustomerIO {
 		@Override
@@ -85,13 +86,11 @@ public class payWithCardTest {
 
 		@Override
 		public void payWithCreditComplete(BigDecimal amountDue) {
-			// TODO Auto-generated method stub
 			CCardComplete++;
 		}
 
 		@Override
 		public void payWithDebitComplete(BigDecimal amountDue) {
-			// TODO Auto-generated method stub
 			DCardComplete++;
 		}
 		
@@ -107,7 +106,6 @@ public class payWithCardTest {
 		}
 		@Override
 		public void transactionFailure() {
-			// TODO Auto-generated method stub
 			failedTransaction++;
 		}
 		@Override
@@ -117,14 +115,13 @@ public class payWithCardTest {
 		}
 		@Override
 		public Card getCustomerCard() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 	}
 		
 	class MyBankIO implements BankIO{
 		
-		int holdNumber;
+		public int holdNumber;
 
 		@Override
 		public void completeTransaction(int holdNumber) {
@@ -134,19 +131,16 @@ public class payWithCardTest {
 
 		@Override
 		public void blockCard(Card card) {
-			// TODO Auto-generated method stub
 			BlockedCard++;
 		}
 
 		@Override
 		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
-			// TODO Auto-generated method stub
 			return this.holdNumber = 1;
 		}
 
 		@Override
 		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
-			// TODO Auto-generated method stub
 			return this.holdNumber = 1;
 		}
 
@@ -158,8 +152,7 @@ public class payWithCardTest {
 
 		@Override
 		public boolean connectionStatus() {
-			// TODO Auto-generated method stub
-			return true;
+			return connectionStatus;
 		}
 		
 	}
@@ -168,7 +161,6 @@ public class payWithCardTest {
 
 		@Override
 		public boolean approveWeightDiscrepancy() {
-			// TODO Auto-generated method stub
 			return false;
 		}
 
@@ -199,6 +191,7 @@ public class payWithCardTest {
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
+		connectionStatus = true;
 	}
 	
 	@After
@@ -236,7 +229,7 @@ public class payWithCardTest {
 	 * @throws IOException
 	 */
 	@Test
-	public void payDeditCard() throws IOException {
+	public void payDebitCard() throws IOException {
 		customer.selectPaymentMethod("Debit");
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
@@ -244,5 +237,301 @@ public class payWithCardTest {
 		assertEquals(DCardComplete, 1);
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
+	}
+	
+	/**
+	 * Test to see if a connection failure from the beginning will cause a transaction
+	 * failure. This is testing for exception 2. This test is for debit payment.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void failedConnectionExc2_Debit() throws IOException {
+		connectionStatus = false;
+		customer.selectPaymentMethod("Debit");
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		selfCheckoutStation.cardReader.insert(DCard, "4321");
+		assertEquals(failedTransaction, 1);
+	}
+	
+	/**
+	 * Test to see if a connection failure from the beginning will cause a transaction
+	 * failure. This is testing for exception 2. This test is for credit payment.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void failedConnectionExc2_Credit() throws IOException {
+		connectionStatus = false;
+		customer.selectPaymentMethod("Credit");
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		selfCheckoutStation.cardReader.insert(CCard, "4321");
+		assertEquals(failedTransaction, 1);
+	}
+	
+	/**
+	 * Test to see if a unauthorized holdNumber will cause a failed transaction. Expecting
+	 * to see this. This test is for credit exception 1.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void unauthorizedExc1_Credit() throws IOException {
+		class MyBankIOStub implements BankIO{
+			
+			public int holdNumber;
+
+			@Override
+			public void completeTransaction(int holdNumber) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void blockCard(Card card) {
+				BlockedCard++;
+			}
+
+			@Override
+			public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 0; // To fail it
+			}
+
+			@Override
+			public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public void releaseHold(CardData data) {
+				this.holdNumber = 0;
+				
+			}
+
+			@Override
+			public boolean connectionStatus() {
+				return connectionStatus;
+			}
+			
+		}
+		MyBankIOStub stubBank = new MyBankIOStub();
+		// Replacing everything important to start fresh with this new stub
+		CustomerIO customer2 = new MyCustomerIO();
+		AttendantIO attendant2 = new MyAttendantIO();
+		SelfCheckoutStation selfCheckoutStation2 = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
+				new BigDecimal[] {new BigDecimal("0.05"),new BigDecimal("0.10"), new BigDecimal("0.25"),
+						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
+		PaymentControllerLogic paymentController2 = new PaymentControllerLogic(selfCheckoutStation2, customer2, attendant2, stubBank, receiptPrinterController);
+		customer2.selectPaymentMethod("Credit");
+		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.ZERO);
+		selfCheckoutStation2.cardReader.insert(CCard, "4321");
+		assertEquals(failedTransaction, 1);
+	}
+	
+	/**
+	 * Test to see if a unauthorized holdNumber will cause a failed transaction. Expecting
+	 * to see this. This test is for debit exception 1.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void unauthorizedExc1_Debit() throws IOException {
+		class MyBankIOStub implements BankIO{
+			
+			public int holdNumber;
+
+			@Override
+			public void completeTransaction(int holdNumber) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void blockCard(Card card) {
+				BlockedCard++;
+			}
+
+			@Override
+			public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 0; // To fail it
+			}
+
+			@Override
+			public void releaseHold(CardData data) {
+				this.holdNumber = 0;
+				
+			}
+
+			@Override
+			public boolean connectionStatus() {
+				return connectionStatus;
+			}
+			
+		}
+		MyBankIOStub stubBank = new MyBankIOStub();
+		// Replacing everything important to start fresh with this new stub
+		CustomerIO customer2 = new MyCustomerIO();
+		AttendantIO attendant2 = new MyAttendantIO();
+		SelfCheckoutStation selfCheckoutStation2 = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
+				new BigDecimal[] {new BigDecimal("0.05"),new BigDecimal("0.10"), new BigDecimal("0.25"),
+						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
+		PaymentControllerLogic paymentController2 = new PaymentControllerLogic(selfCheckoutStation2, customer2, attendant2, stubBank, receiptPrinterController);
+		customer2.selectPaymentMethod("Debit");
+		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.ZERO);
+		selfCheckoutStation2.cardReader.insert(DCard, "4321");
+		assertEquals(failedTransaction, 1);
+	}
+	
+	/**
+	 * Test to see if a connection error occurs after holding, should result in the hold
+	 * being released. This is the test for credit exception 3. Should result in no 
+	 * transaction being completed, but the connection should be attempted 5 times.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void connectionErrorCredit_Exc3() throws IOException {
+		class MyBankIOStub implements BankIO{
+			public int times = 0;
+			public int holdNumber;
+
+			@Override
+			public void completeTransaction(int holdNumber) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void blockCard(Card card) {
+				BlockedCard++;
+			}
+
+			@Override
+			public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public void releaseHold(CardData data) {
+				this.holdNumber = 0;
+				
+			}
+
+			@Override
+			public boolean connectionStatus() {
+				// This is making sure that after the first time is called (which should pass), there will be a connection issue.
+				if(this.times == 1) {
+					connectionStatus = false;
+				}
+				this.times++;
+				return connectionStatus;
+			}
+			
+		}
+		MyBankIOStub stubBank = new MyBankIOStub();
+		// Replacing everything important to start fresh with this new stub
+		CustomerIO customer2 = new MyCustomerIO();
+		AttendantIO attendant2 = new MyAttendantIO();
+		SelfCheckoutStation selfCheckoutStation2 = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
+				new BigDecimal[] {new BigDecimal("0.05"),new BigDecimal("0.10"), new BigDecimal("0.25"),
+						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
+		PaymentControllerLogic paymentController2 = new PaymentControllerLogic(selfCheckoutStation2, customer2, attendant2, stubBank, receiptPrinterController);
+		customer2.selectPaymentMethod("Credit");
+		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.ZERO);
+		selfCheckoutStation2.cardReader.insert(CCard, "4321");
+		assertEquals(CCardComplete, 0);
+		// Checking to see if the connection was attempted a total of 6 times.
+		// This includes 1 check where it will return true, and then 5 where
+		// it will return false.
+		assertEquals(stubBank.times, 6);
+	}
+	
+	/**
+	 * Test to see if a connection error occurs after holding, should result in the hold
+	 * being released. This is the test for debit exception 3. Should result in no 
+	 * transaction being completed, but the connection should be attempted 5 times.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void connectionErrorDebit_Exc3() throws IOException {
+		class MyBankIOStub implements BankIO{
+			public int times = 0;
+			public int holdNumber;
+
+			@Override
+			public void completeTransaction(int holdNumber) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void blockCard(Card card) {
+				BlockedCard++;
+			}
+
+			@Override
+			public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+				return this.holdNumber = 1;
+			}
+
+			@Override
+			public void releaseHold(CardData data) {
+				this.holdNumber = 0;
+				
+			}
+
+			@Override
+			public boolean connectionStatus() {
+				// This is making sure that after the first time is called (which should pass), there will be a connection issue.
+				if(this.times == 1) {
+					connectionStatus = false;
+				}
+				this.times++;
+				return connectionStatus;
+			}
+			
+		}
+		MyBankIOStub stubBank = new MyBankIOStub();
+		// Replacing everything important to start fresh with this new stub
+		CustomerIO customer2 = new MyCustomerIO();
+		AttendantIO attendant2 = new MyAttendantIO();
+		SelfCheckoutStation selfCheckoutStation2 = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
+				new BigDecimal[] {new BigDecimal("0.05"),new BigDecimal("0.10"), new BigDecimal("0.25"),
+						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
+		PaymentControllerLogic paymentController2 = new PaymentControllerLogic(selfCheckoutStation2, customer2, attendant2, stubBank, receiptPrinterController);
+		customer2.selectPaymentMethod("Debit");
+		customer2.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.valueOf(20.0));
+		paymentController2.setCartTotal(BigDecimal.ZERO);
+		selfCheckoutStation2.cardReader.insert(DCard, "4321");
+		assertEquals(DCardComplete, 0);
+		// Checking to see if the connection was attempted a total of 6 times.
+		// This includes 1 check where it will return true, and then 5 where
+		// it will return false.
+		assertEquals(stubBank.times, 6);
 	}
 }

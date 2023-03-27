@@ -455,43 +455,46 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	public void payCredit(CardReader reader, CardData data) {
 		int creditHoldNumber;
 		Boolean transactionCompleted = false;;
-		if(this.myBank == null) { // Exception 1
+		if(!this.connectToBank()) { // Exception 1
 			myCustomer.transactionFailure();
 			reader.remove();
-		}
-		creditHoldNumber = this.myBank.creditCardTransaction(data, this.amountToPayCard);
-		if(creditHoldNumber != 0) { // 0 indicates non-authorized
-			int tries = 0;
-			while(tries < 5) { // Exception 3
-				if(!this.connectToBank()) {
-					tries++;
-					try {	
-						TimeUnit.SECONDS.sleep(20);
-					} catch(Exception exc) {}
-				}
-				else {
-					myBank.completeTransaction(creditHoldNumber);
-					transactionCompleted = true;
-					break;
-				}
-			}
-			if(transactionCompleted) {
-				this.updateAmountPaid(this.amountToPayCard);
-				this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
-				reader.remove();
-				myCustomer.payWithCreditComplete(this.amountToPayCard);
-				this.amountToPayCard = BigDecimal.ZERO; // Reset
-			}
-			else {
-				myBank.releaseHold(data);
-			}
 		}
 		else {
-			myCustomer.transactionFailure();
-			reader.remove();
+			creditHoldNumber = this.myBank.creditCardTransaction(data, this.amountToPayCard);
+			if(creditHoldNumber != 0) { // 0 indicates non-authorized
+				int tries = 0;
+				while(tries < 5) { // Exception 3
+					if(!this.connectToBank()) {
+						tries++;
+						try {	
+							TimeUnit.SECONDS.sleep(20);
+						} catch(Exception exc) {}
+					}
+					else {
+						myBank.completeTransaction(creditHoldNumber);
+						transactionCompleted = true;
+						break;
+					}
+				}
+				if(transactionCompleted) {
+					this.updateAmountPaid(this.amountToPayCard);
+					this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
+					reader.remove();
+					myCustomer.payWithCreditComplete(this.amountToPayCard);
+					this.amountToPayCard = BigDecimal.ZERO; // Reset
+				}
+				else {
+					myBank.releaseHold(data);
+				}
+			}
+			else {
+				myCustomer.transactionFailure();
+				reader.remove();
+			}
 		}
 	}
-	
+	// This is being kept separate from payCredit despite having the same logic simply so that
+	// future edits can be made to differentiate them without ruining everything.
 	public void payDebit(CardReader reader, CardData data) {
 		int debitHoldNumber;
 		Boolean transactionCompleted = false;;
@@ -499,36 +502,38 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 			myCustomer.transactionFailure();
 			reader.remove();
 		}
-		debitHoldNumber = myBank.debitCardTransaction(data, this.amountToPayCard);
-		if(debitHoldNumber != 0) { // 0 indicates non-authorized
-			int tries = 0;
-			while(tries < 5) { // Exception 3
-				if(!this.connectToBank()) {
-					tries++;
-					try {	
-						TimeUnit.SECONDS.sleep(20);
-					} catch(Exception exc) {}
+		else {
+			debitHoldNumber = this.myBank.debitCardTransaction(data, this.amountToPayCard);
+			if(debitHoldNumber != 0) { // 0 indicates non-authorized
+				int tries = 0;
+				while(tries < 5) { // Exception 3
+					if(!this.connectToBank()) {
+						tries++;
+						try {	
+							TimeUnit.SECONDS.sleep(20);
+						} catch(Exception exc) {}
+					}
+					else {
+						myBank.completeTransaction(debitHoldNumber);
+						transactionCompleted = true;
+						break;
+					}
+				}
+				if(transactionCompleted) {
+					this.updateAmountPaid(this.amountToPayCard);
+					this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
+					reader.remove();
+					myCustomer.payWithDebitComplete(this.amountToPayCard);
+					this.amountToPayCard = BigDecimal.ZERO; // Reset
 				}
 				else {
-					myBank.completeTransaction(debitHoldNumber);
-					transactionCompleted = true;
-					break;
+					myBank.releaseHold(data);
 				}
 			}
-			if(transactionCompleted) {
-				this.updateAmountPaid(this.amountToPayCard);
-				this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
-				reader.remove();
-				myCustomer.payWithDebitComplete(this.amountToPayCard);
-				this.amountToPayCard = BigDecimal.ZERO; // Reset
-			}
 			else {
-				myBank.releaseHold(data);
+				myCustomer.transactionFailure();
+				reader.remove();
 			}
-		}
-		else { // Exception 1
-			myCustomer.transactionFailure();
-			reader.remove();
 		}
 	}
 	
