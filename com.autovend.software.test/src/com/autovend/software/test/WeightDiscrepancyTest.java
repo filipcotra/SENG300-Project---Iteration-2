@@ -95,7 +95,7 @@ public class WeightDiscrepancyTest {
 		station.baggingArea.add(mbWeighted);
 		assertTrue(customerIO.customerWeightDiscrepancySignal);
 		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
-		attendantIO.approveWeightDiscrepancy();
+		attendantIO.approveWeightDiscrepancy(customerIO);
 	}
 		
 	class MyCustomerIO implements CustomerIO {
@@ -185,6 +185,13 @@ public class WeightDiscrepancyTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			this.customerWeightDiscrepancySignal = false;
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	
@@ -200,10 +207,10 @@ public class WeightDiscrepancyTest {
 		}
 
 		@Override
-		public boolean approveWeightDiscrepancy() {
+		public void approveWeightDiscrepancy(CustomerIO customerIO) {
 			// TODO Auto-generated method stub
 			this.attendantWeightDiscrepancySignal = false;
-			return true;
+			customerIO.notifyWeightDiscrepancyApprovedCustomerIO();
 		}
 
 		@Override

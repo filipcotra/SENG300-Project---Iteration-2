@@ -33,12 +33,6 @@ public class AddOwnBagsTest {
 	}
 
 	@Override
-	public boolean approveWeightDiscrepancy() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public void changeRemainsNoDenom(BigDecimal changeLeft) {
 		// TODO Auto-generated method stub
 		
@@ -65,6 +59,12 @@ public class AddOwnBagsTest {
 		else {
 			throw new DisabledException();
 		}
+	}
+
+	@Override
+	public void approveWeightDiscrepancy(CustomerIO customerIO) {
+		// TODO Auto-generated method stub
+		
 	}
 	}
 	
@@ -150,6 +150,12 @@ public class AddOwnBagsTest {
 
 		@Override
 		public void signalPutPurchasedBagsOnBaggingArea() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
 			// TODO Auto-generated method stub
 			
 		}

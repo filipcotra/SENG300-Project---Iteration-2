@@ -100,6 +100,13 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		customerIO.signalReadyForInteraction();
 	}
 	
+	/**
+	 * This function is called when an attendant has approved a weight discrepancy noticed
+	 * and the customer is allowed to proceed as usual by unblocking the system and updating the
+	 * weight.
+	 * if any purchase of bags caused the discrepancy, signal that the bags were purchased
+	 * successfully
+	 */
 	public void weightDiscrepancyApproved() {
 		this.unblockSystem();
 		this.expectedWeight = this.actualWeight;

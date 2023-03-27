@@ -8,12 +8,6 @@ import java.math.BigDecimal;
  *
  */
 public interface AttendantIOTempPurchaseOwnBags extends AttendantIO{
-	/**
-	 * Simulates an attendant approving/rejecting a weight discrepancy
-	 * This interaction is apart of the Weight Discrepancy use case
-	 * @return true if approved, false if rejected
-	 */
-	public boolean approveWeightDiscrepancy();
 	
 	/**
 	 * Simulates an attendant being informed of a change discrepancy.

@@ -114,6 +114,12 @@ public class EnterMembershipNumberTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	
