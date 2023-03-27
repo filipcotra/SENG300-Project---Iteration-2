@@ -108,12 +108,23 @@ public class ReceiptPrinterTest {
 
 		@Override
 		public void acknowledgeLowInk() {
-			System.out.println("Attendant notified of low ink");
+			try{
+				selfCheckoutStation.printer.addInk(1048576 - receiptPrinterController.inkRemaining);
+				receiptPrinterController.setContents(1048576 - receiptPrinterController.inkRemaining, 0);
+			} catch (Exception e){
+				e.printStackTrace();
+			}
+
 		}
 
 		@Override
 		public void acknowledgeLowPaper() {
-			System.out.println("Attendant notified of low paper");
+			try{
+				selfCheckoutStation.printer.addPaper(1024 - receiptPrinterController.paperRemaining);
+				receiptPrinterController.setContents(0, 1024 - receiptPrinterController.paperRemaining);
+			} catch (Exception e){
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -187,6 +198,7 @@ public class ReceiptPrinterTest {
 		try {
 			selfCheckoutStation.printer.addInk(1048576);
 			selfCheckoutStation.printer.addPaper(1024);
+			receiptPrinterController.setContents(1048576, 1024);
 		} catch (OverloadException e) {}
 		change = "3.00";
 		amountPaid = "45.00";
@@ -215,6 +227,7 @@ public class ReceiptPrinterTest {
 		try {
 			selfCheckoutStation.printer.addInk(1048576);
 			selfCheckoutStation.printer.addPaper(1024);
+			receiptPrinterController.setContents(1048576, 1024);
 		} catch (OverloadException e) {}
 		change = "3.00";
 		amountPaid = "45.00";
@@ -237,6 +250,7 @@ public class ReceiptPrinterTest {
 		try {
 			selfCheckoutStation.printer.addPaper(1024); // Add paper to printer
 			selfCheckoutStation.printer.addInk(1); // Add insufficient ink for whole receipt
+			receiptPrinterController.setContents(1024, 1);
 		} catch (OverloadException e) {}
 		change = "0.00";
 		amountPaid = "75.00";
@@ -264,6 +278,7 @@ public class ReceiptPrinterTest {
 		try {
 			selfCheckoutStation.printer.addInk(1048576); // Add ink to printer
 			selfCheckoutStation.printer.addPaper(1); // Add insufficient paper for whole receipt
+			receiptPrinterController.setContents(1048576, 1);
 		} catch (OverloadException e) {}
 		change = "0.00";
 		amountPaid = "75.00";
@@ -291,6 +306,7 @@ public class ReceiptPrinterTest {
 		try {
 			selfCheckoutStation.printer.addInk(1048576);
 			selfCheckoutStation.printer.addPaper(1024);
+			receiptPrinterController.setContents(1048576, 1024);
 		} catch (OverloadException e) {}
 		// Changing the price of one item cost so that it doesn't end in 0
 		this.itemCostList.set(0,"5.35");
@@ -320,6 +336,7 @@ public class ReceiptPrinterTest {
 		try {
 			selfCheckoutStation.printer.addInk(1048576);
 			selfCheckoutStation.printer.addPaper(1024);
+			receiptPrinterController.setContents(1048576, 1024);
 		} catch (OverloadException e) {}
 		change = "3.00";
 		amountPaid = "45.00";

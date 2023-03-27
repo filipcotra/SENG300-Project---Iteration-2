@@ -38,8 +38,8 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	char[] priceSpace = { ' ', ' ', ' ', ' ', ' ', ' ', '$' };
 	int initialInk;
 	int initialPaper;
-	int inkRemaining;
-	int paperRemaining;
+	public int inkRemaining;
+	public int paperRemaining;
 	boolean lowPaper = false;
 	boolean lowInk = false;
 
@@ -270,30 +270,22 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	/*
 	 * Method used to refillInk once lowInk is detected, if so enough ink is added to fill the ink storage to the maximum amount
 	 */
-	public void refillInk() throws OverloadException {
+	public void refillInk(){
 		if(this.lowInk == true) {
-			printer.addInk(2^20 - this.inkRemaining);
 			this.attendant.acknowledgeLowInk();
-			System.out.println("Ink has been sucessfully refilled");
 			unSuspendSystem();
-			System.out.println("System unsuspended!");
 			this.lowInk = false;
-			setContents(2^20-this.inkRemaining, 0);
 		}
 	}
 	
 	/*
 	 * Method used to refillInk once lowPaper is detected, if so enough paper is added to fill the paper storage to the maximum amount
 	 */
-	public void refillPaper() throws OverloadException {
+	public void refillPaper(){
 		if(this.lowPaper == true) {
-			printer.addPaper(2^10 - this.paperRemaining);
 			this.attendant.acknowledgeLowPaper();
-			System.out.println("Paper has been sucessfully refilled");
 			unSuspendSystem();
-			System.out.println("System unsuspended!");
 			this.lowPaper = false;
-			setContents(0,2^10-this.paperRemaining);
 		}
 	}
 	
