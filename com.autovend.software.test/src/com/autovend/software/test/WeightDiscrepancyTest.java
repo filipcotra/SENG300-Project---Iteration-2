@@ -213,6 +213,7 @@ public class WeightDiscrepancyTest {
 			// TODO Auto-generated method stub
 			this.attendantWeightDiscrepancySignal = false;
 			customerIO.notifyWeightDiscrepancyApprovedCustomerIO();
+			baggingAreaController.weightDiscrepancyApproved();
 		}
 
 		@Override
