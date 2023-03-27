@@ -98,11 +98,24 @@ public class WeightDiscrepancyTest {
 		attendantIO.approveWeightDiscrepancy(customerIO);
 		assertFalse(customerIO.customerWeightDiscrepancySignal);
 		assertFalse(attendantIO.attendantWeightDiscrepancySignal);
+		assertEquals(mbWeighted, baggingAreaController.expectedWeight);
+		assertEquals(mbWeighted, baggingAreaController.actu)
+	}
+	
+	@Test
+	public void weightDiscrepancyDueToBagPurchased() {
+		
 	}
 		
 	class MyCustomerIO implements CustomerIO {
 		
 		boolean customerWeightDiscrepancySignal;
+		
+		boolean purchaseBagsSignal = false;
+		int purchaseBagsQuantity = 0;
+		boolean finishedPurchasingBagsSignal = false;
+		boolean interactionReadySignal = false;
+		boolean placePurchasedBagsSignal = false;
 
 		@Override
 		public void scanItem(BarcodedUnit item) {
@@ -167,24 +180,32 @@ public class WeightDiscrepancyTest {
 		@Override
 		public void signalPurchaseBags(int quantity) {
 			// TODO Auto-generated method stub
+			this.purchaseBagsSignal = true;
+			this.purchaseBagsQuantity = quantity;
+			
+			baggingAreaController.purchaseBags(quantity);
 			
 		}
 
 		@Override
 		public void signalFinishedPurchasingBags() {
 			// TODO Auto-generated method stub
+			this.finishedPurchasingBagsSignal = true;
+			
 			
 		}
 
 		@Override
 		public void signalReadyForInteraction() {
 			// TODO Auto-generated method stub
+			this.interactionReadySignal = true;
 			
 		}
 
 		@Override
 		public void signalPutPurchasedBagsOnBaggingArea() {
 			// TODO Auto-generated method stub
+			this.placePurchasedBagsSignal = true;
 			
 		}
 
