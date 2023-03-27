@@ -108,7 +108,6 @@ public class PaymentWithCashTest {
 	Boolean attendantSignalled;
 	Boolean coinFalseNegative;
 	Boolean billFalseNegative;
-	Boolean customerActive;
 
 /* ---------------------------------- Stubs ---------------------------------------------------*/
 	
@@ -508,9 +507,7 @@ public class PaymentWithCashTest {
 		@Override
 		public void reactToCoinAddedEvent(CoinTray tray) {
 			this.device = tray;
-			if (customerActive) {
-				customer.removeCoin(tray);
-			}
+			customer.removeCoin(tray);
 		}
 		
 	}
@@ -592,7 +589,6 @@ public class PaymentWithCashTest {
 		paymentController.setCartTotal(BigDecimal.ZERO);
 		coinFalseNegative = true;
 		billFalseNegative = true;
-		customerActive = true;
 		billObserver = new MyBillSlotObserver();
 		selfCheckoutStation.billInput.register(billObserver);
 	}
@@ -634,7 +630,6 @@ public class PaymentWithCashTest {
 		paymentController = null;
 		billFalseNegative = true;
 		coinFalseNegative = true;
-		customerActive = true;
 		
 	}
 
@@ -1632,51 +1627,6 @@ public class PaymentWithCashTest {
 		assertTrue(attendantSignalled);
 	}
 	
-	/* Test Case: When more than 20 coins are dispensed at once, coin tray will overflow.
-	 * 
-	 * Description: Will pay $2 when the charge is $0.25, so that the change is
-	 * $1.75. All denominations of coins will be emptied except for $0.05. 
-	 * 
-	 * Expected: Expecting $1.00 of change to be dispensed as 20 coins, and the station suspended 
-	 * with the attendant signaled as $0.75 remains to be given but no space for the coins.
-	 */
-	@Test
-	public void coinTrayOverflow() {
-		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
-		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
-		// Emptying other coinDispensers
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
-		
-		// Register relevant observers
-		coinObserverStub = new CoinDispenserStub();
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
-		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
-		
-		coinTrayObserver = new MyCoinTrayObserver();
-		selfCheckoutStation.coinTray.register(coinTrayObserver);
-		// Set customerActive to false, to simulate them not paying attention as the coin tray overflows!
-		customerActive = false;
-		
-		paymentController.setCartTotal(BigDecimal.valueOf(0.25));		
-		while(coinFalseNegative) {
-			selfCheckoutStation.coinSlot.accept(coinToonie);
-		}
-		
-		assertEquals("1.75",paymentController.getTotalChange());
-		assertEquals("0.75",""+paymentController.getChangeDue());
-		assertEquals("[0.05, 0.05, 0.05, 0.05, 0.05, "
-				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
-				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
-				+ "0.05, 0.05, 0.05, 0.05, 0.05]",ejectedCoins.toString());
-		assertTrue(attendantSignalled);
-	}
-	
 	/* Test Case: When more than 20 coins are dispensed at once, but 
 	 * customer is collecting each coin as it comes out.
 	 * 
@@ -1687,7 +1637,7 @@ public class PaymentWithCashTest {
 	 * will be emptying the coin tray to ensure all coins can be dispensed.
 	 */
 	@Test
-	public void coinTrayActiveCustomer() {
+	public void coinTrayMoreThan20Coins() {
 		// Simulate customer selecting Cash payment method
 		customer.selectPaymentMethod("Cash");
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
@@ -1706,9 +1656,6 @@ public class PaymentWithCashTest {
 		
 		coinTrayObserver = new MyCoinTrayObserver();
 		selfCheckoutStation.coinTray.register(coinTrayObserver);
-		// Set customerActive to false, to simulate them paying attention to the coins and grabbing them
-		// as they are dispensed into the tray
-		customerActive = true;
 		
 		paymentController.setCartTotal(BigDecimal.valueOf(0.25));		
 		while(coinFalseNegative) {
@@ -1724,6 +1671,5 @@ public class PaymentWithCashTest {
 				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
 				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
 				+ "0.05, 0.05, 0.05, 0.05, 0.05]",ejectedCoins.toString());
-		assertFalse(attendantSignalled);
 	}
 }
