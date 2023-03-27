@@ -48,7 +48,7 @@ public class MembershipNumberController {
 			// If bad membership
 			if (!this.validMembership) {
 				myCustomer.notifyBadMembershipNumberCustomerIO(); // Notify customer that the membership number is bad
-			} else { // If valid membership
+			} else { // Else valid membership
 				this.membershipNumber = membershipInput; // Add membership number to the session
 			}
 		} else {
