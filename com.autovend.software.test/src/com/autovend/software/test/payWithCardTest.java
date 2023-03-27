@@ -480,7 +480,7 @@ public class payWithCardTest {
 	 * 
 	 * @throws IOException
 	 */
-//	@Test
+	@Test
 	public void connectionErrorCredit_Exc3() throws IOException {
 		class MyBankIOStub implements BankIO{
 			public int times = 0;
@@ -553,7 +553,7 @@ public class payWithCardTest {
 	 * 
 	 * @throws IOException
 	 */
-//	@Test
+	@Test
 	public void connectionErrorDebit_Exc3() throws IOException {
 		class MyBankIOStub implements BankIO{
 			public int times = 0;
