@@ -22,6 +22,9 @@ public class AddOwnBagsTest {
 	PaymentControllerLogic paymentController;
 	PrintReceipt pr;
 	BaggingAreaController bag;
+	boolean wasCustomerIndicatedToUseOwnBags = false;
+	boolean wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags = false;
+	
 	
 	class myAttendantIO implements AttendantIO{
 		
@@ -59,6 +62,7 @@ public class AddOwnBagsTest {
 		else {
 			throw new DisabledException();
 		}
+		customer.indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags();
 	}
 
 	@Override
@@ -103,7 +107,7 @@ public class AddOwnBagsTest {
 		@Override
 		public void thankCustomer() {
 			// TODO Auto-generated method stub
-			
+			bag
 		}
 
 		@Override
@@ -160,6 +164,21 @@ public class AddOwnBagsTest {
 			
 		}
 		
+		@Override
+		public void selectAddOwnBags(){
+			bag.selectAddOwnBags();
+		}
+		
+		@Override
+		public void indicateAddOwnBags() {
+			wasCustomerIndicatedToUseOwnBags = true;
+		}
+		
+		@Override
+		public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+			wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags = true;
+		}
+		
 	}
 
 
@@ -182,7 +201,7 @@ public void tearDown() {
 	pr = null;
 	paymentController = null;
 	bag = null;
-}
+}wasCustomerIndicatedToUseOwnBags
 
 @Test
 public void bagsAccepted() {
@@ -230,7 +249,19 @@ public void bagsAccepted() {
 		assertFalse(station.billStorage.isDisabled());
 		assertFalse(station.billValidator.isDisabled());
 	}
-
+	
+	@Test
+	public void wasCustomerIndicatedToUseOwnBagsTest() {
+		customer.selectAddOwnBags();
+		assertTrue(wasCustomerIndicatedToUseOwnBags);
+	}
+	
+	@Test
+	public void wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags() {
+		attendantIO.checkAddedOwnBags();
+		assertTrue(wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags);
+	}
+	
 }
 
 

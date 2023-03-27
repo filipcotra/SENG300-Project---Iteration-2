@@ -214,6 +214,21 @@ public class WeightDiscrepancyTest {
 			
 		}
 		
+		@Override
+		public void selectAddOwnBags() {
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void indicateAddOwnBags() {
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+			// TODO Auto-generated method stub
+		}
+		
 	}
 	
 	class MyAttendantIO implements AttendantIO {

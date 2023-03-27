@@ -121,6 +121,21 @@ public class EnterMembershipNumberTest {
 			
 		}
 		
+		@Override
+		public void selectAddOwnBags() {
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void indicateAddOwnBags() {
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+			// TODO Auto-generated method stub
+		}
+		
 	}
 	
 	
