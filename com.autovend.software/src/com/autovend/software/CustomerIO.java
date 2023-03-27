@@ -37,6 +37,12 @@ public interface CustomerIO {
 	 */
 	public void notifyWeightDiscrepancyCustomerIO();
 	
+	/*
+	 * Simulates the customer being notified the weight discrepancy issue has been resolved
+	 * by the attendant and they can proceed
+	 */
+	public void notifyWeightDiscrepancyApprovedCustomerIO();
+	
 	/**
 	 * Simulates a customer placing their scanned item in the bagging area.
 	 * This interaction is on Step 5 of add item by scanning.

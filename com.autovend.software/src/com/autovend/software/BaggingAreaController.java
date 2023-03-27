@@ -32,6 +32,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		this.customerIO = customerIO;
 		this.attendantIO = attendantIO;
 		this.paymentController = paymentController;
+		this.station.baggingArea.register(this);
 	}
 	
 	/**
@@ -98,6 +99,21 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		customerIO.signalFinishedPurchasingBags();
 		customerIO.signalReadyForInteraction();
 	}
+	
+	/**
+	 * This function is called when an attendant has approved a weight discrepancy noticed
+	 * and the customer is allowed to proceed as usual by unblocking the system and updating the
+	 * weight.
+	 * if any purchase of bags caused the discrepancy, signal that the bags were purchased
+	 * successfully
+	 */
+	public void weightDiscrepancyApproved() {
+		this.unblockSystem();
+		this.expectedWeight = this.actualWeight;
+		if (purchasingBags == true) {
+			this.finishedPurchasingBags();
+		}
+	}
 
 	@Override
 	public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
@@ -125,16 +141,19 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 			attendantIO.notifyWeightDiscrepancyAttendantIO();
 			// Step 4. Attendant approves discrepancy
 			// Attendant interaction required: attendantIO.approveWeightDiscrepancy()
-			if (attendantIO.approveWeightDiscrepancy()) {
-				this.unblockSystem(); // Unblock the system
-				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
-			}
-			// If they don't approve, then remain blocked
-			else {
-				this.blockSystem();
-			}
+//			if (attendantIO.approveWeightDiscrepancy()) {
+//				this.unblockSystem(); // Unblock the system
+//				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
+//				if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
+//					this.finishedPurchasingBags();
+//				}
+//			}
+//			// If they don't approve, then remain blocked
+//			else {
+//				this.blockSystem();
+//			}
 		} else { // If there is no discrepancy then unblock the system
-			if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
+			if (purchasingBags == true) {	// if purchased bags, call to finishedPurchasingBags
 				this.finishedPurchasingBags();
 			}
 			this.unblockSystem(); // Step 7, unblock the system 

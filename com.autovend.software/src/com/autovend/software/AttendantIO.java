@@ -23,11 +23,10 @@ public interface AttendantIO {
 	public void notifyWeightDiscrepancyAttendantIO();
 	
 	/**
-	 * Simulates an attendant approving/rejecting a weight discrepancy
+	 * Simulates an attendant approving a weight discrepancy
 	 * This interaction is apart of the Weight Discrepancy use case
-	 * @return true if approved, false if rejected
 	 */
-	public boolean approveWeightDiscrepancy();
+	public void approveWeightDiscrepancy(CustomerIO customerIO);
 	
 	/**
 	 * Simulates an attendant being informed of a change discrepancy.

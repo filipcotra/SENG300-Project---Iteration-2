@@ -26,7 +26,7 @@ import com.autovend.products.BarcodedProduct;
 /**
  * Control software for the Add Item By Scanning use case.
  */
-public class AddItemByScanningController implements BarcodeScannerObserver, ElectronicScaleObserver {
+public class AddItemByScanningController implements BarcodeScannerObserver {
 	
 	BarcodedProduct product;
 	SelfCheckoutStation station;
@@ -50,7 +50,6 @@ public class AddItemByScanningController implements BarcodeScannerObserver, Elec
 		this.attendantIO = attendantIO;
 		this.paymentController = paymentController;
 		this.station.mainScanner.register(this);
-		this.station.baggingArea.register(this);
 	}
 	
 	/**
@@ -145,31 +144,6 @@ public class AddItemByScanningController implements BarcodeScannerObserver, Elec
 		
 	}
 
-	/**
-	 * Occurs after the scanned item is placed in the bagging area
-	 */
-	@Override
-	//Notify weight change (Step 6)
-	public void reactToWeightChangedEvent(ElectronicScale scale, double weightInGrams) {
-		// Check for weight discrepancy (Exception 1)
-		this.actualWeight = weightInGrams;
-		if (actualWeight != this.expectedWeight) {
-			// Step 1. Block self checkout system (already done)
-			// Step 2. Notify CustomerIO
-			// Step 3. Notify Attendant
-			// Step 4. Attendant approves discrepancy
-			// Attendant interaction required: attendantIO.approveWeightDiscrepancy()
-			if (attendantIO.approveWeightDiscrepancy()) {
-				this.unblockSystem(); // Unblock the system (Step 7)
-			}
-			// If they don't approve, then remain blocked
-			else {
-				this.blockSystem();
-			}
-		} else { // If there is no discrepancy then unblock the system
-			this.unblockSystem(); // Step 7, unblock the system 
-		}
-	}
 	
 	// The methods below are not needed but required by the inherited interfaces
 	
@@ -185,15 +159,4 @@ public class AddItemByScanningController implements BarcodeScannerObserver, Elec
 		
 	}
 
-	@Override
-	public void reactToOverloadEvent(ElectronicScale scale) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void reactToOutOfOverloadEvent(ElectronicScale scale) {
-		// TODO Auto-generated method stub
-		
-	}
 }

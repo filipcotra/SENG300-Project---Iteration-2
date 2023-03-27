@@ -23,6 +23,7 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 		this.customerIO = customerIO;
 		this.attendantIO = attendantIO;
 		this.paymentController = paymentController;
+		this.station.baggingArea.register(this);
 	}
 	
 	/**
@@ -64,6 +65,15 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 	public double getActualWeight() {
 		return this.actualWeight;
 	}
+	
+	public void weightDiscrepancyApproved() {
+		this.unblockSystem();
+		this.expectedWeight = this.actualWeight;
+		if (purchasingBags == true) {
+			this.finishedPurchasingBags();
+		}
+	}
+
 
 	@Override
 	public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
@@ -91,14 +101,14 @@ public class WeightDiscrepancyController implements ElectronicScaleObserver{
 			attendantIO.notifyWeightDiscrepancyAttendantIO();
 			// Step 4. Attendant approves discrepancy
 			// Attendant interaction required: attendantIO.approveWeightDiscrepancy()
-			if (attendantIO.approveWeightDiscrepancy()) {
-				this.unblockSystem(); // Unblock the system
-				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
-			}
-			// If they don't approve, then remain blocked
-			else {
-				this.blockSystem();
-			}
+//			if (attendantIO.approveWeightDiscrepancy()) {
+//				this.unblockSystem(); // Unblock the system
+//				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
+//			}
+//			// If they don't approve, then remain blocked
+//			else {
+//				this.blockSystem();
+//			}
 		} else { // If there is no discrepancy then unblock the system
 			if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
 				this.finishedPurchasingBags();

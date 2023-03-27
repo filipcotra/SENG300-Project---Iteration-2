@@ -234,6 +234,12 @@ public class PurchaseBagsTest {
 			this.placePurchasedBagsSignal = true;
 			
 		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	
@@ -243,12 +249,6 @@ public class PurchaseBagsTest {
 		public void notifyWeightDiscrepancyAttendantIO() {
 			// TODO Auto-generated method stub
 			
-		}
-
-		@Override
-		public boolean approveWeightDiscrepancy() {
-			// TODO Auto-generated method stub
-			return false;
 		}
 
 		@Override
@@ -274,6 +274,13 @@ public class PurchaseBagsTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public void approveWeightDiscrepancy(CustomerIO customerIO) {
+			// TODO Auto-generated method stub
+			
+		}
+
 		
 	}
 

@@ -11,9 +11,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
+import com.autovend.Numeral;
+import com.autovend.SellableUnit;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.SelfCheckoutStation;
+import com.autovend.external.ProductDatabases;
+import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.AttendantIOTempPurchaseOwnBags;
 import com.autovend.software.BaggingAreaController;
@@ -34,15 +39,30 @@ public class WeightDiscrepancyTest {
 	PaymentControllerLogic paymentController;
 	PrintReceipt printerController;
 	BaggingAreaController baggingAreaController;
+	public int scaleMaximumWeight;
+	public int scaleSensitivity;
+	public BarcodedProduct marsBar;
+	public Barcode marsBarBarcode;
+	public SellableUnit mb;
+	public BigDecimal mbPrice;
 
 	@Before
 	public void SetUp() {
-		this.station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {10,20}, new BigDecimal[] {BigDecimal.ONE}, 999, 1);
+		ProductDatabases.BARCODED_PRODUCT_DATABASE.clear();
+		scaleMaximumWeight = 999;
+		scaleSensitivity = 2;
+		this.station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {10,20}, new BigDecimal[] {BigDecimal.ONE}, scaleMaximumWeight, scaleSensitivity);
 		this.attendantIO = new MyAttendantIO();
 		this.customerIO = new MyCustomerIO();
 		this.printerController = new PrintReceipt(station, station.printer, customerIO, attendantIO);
 		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, printerController);
 		this.baggingAreaController = new BaggingAreaController(station, customerIO, attendantIO, paymentController);
+		marsBarBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
+		mbPrice = new BigDecimal(1.25);
+		marsBar = new BarcodedProduct(marsBarBarcode,"chocolate",mbPrice,15);
+		mb = new BarcodedUnit(marsBarBarcode,15);
+		ProductDatabases.BARCODED_PRODUCT_DATABASE.put(marsBarBarcode, marsBar);
+		ProductDatabases.INVENTORY.put(marsBar, 5);
 	}
 	
 	@After
@@ -59,7 +79,25 @@ public class WeightDiscrepancyTest {
 	
 	@Test
 	public void weightDiscrepancyNormalTest() {
-		
+		Barcode marsBarWeightedBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
+		BarcodedUnit mbWeighted = new BarcodedUnit(marsBarWeightedBarcode, 20);
+		station.mainScanner.scan(mb);
+		station.baggingArea.add(mbWeighted);
+		assertTrue(customerIO.customerWeightDiscrepancySignal);
+		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
+	}
+	
+	@Test
+	public void weightDiscrepancyApproveTest() {
+		Barcode marsBarWeightedBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
+		BarcodedUnit mbWeighted = new BarcodedUnit(marsBarWeightedBarcode, 20);
+		station.mainScanner.scan(mb);
+		station.baggingArea.add(mbWeighted);
+		assertTrue(customerIO.customerWeightDiscrepancySignal);
+		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
+		attendantIO.approveWeightDiscrepancy(customerIO);
+		assertFalse(customerIO.customerWeightDiscrepancySignal);
+		assertFalse(attendantIO.attendantWeightDiscrepancySignal);
 	}
 		
 	class MyCustomerIO implements CustomerIO {
@@ -149,6 +187,13 @@ public class WeightDiscrepancyTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			this.customerWeightDiscrepancySignal = false;
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	
@@ -164,10 +209,11 @@ public class WeightDiscrepancyTest {
 		}
 
 		@Override
-		public boolean approveWeightDiscrepancy() {
+		public void approveWeightDiscrepancy(CustomerIO customerIO) {
 			// TODO Auto-generated method stub
 			this.attendantWeightDiscrepancySignal = false;
-			return true;
+			customerIO.notifyWeightDiscrepancyApprovedCustomerIO();
+			baggingAreaController.weightDiscrepancyApproved();
 		}
 
 		@Override
