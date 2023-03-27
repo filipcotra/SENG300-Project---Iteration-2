@@ -84,6 +84,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	private BigDecimal amountToPayCard; // The customer should indicate this
 	private BankIO myBank;
 	private CardReader cardReader;
+	String cardMethodSelected;
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -136,6 +137,9 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.amountToPayCard = BigDecimal.ZERO; // By default
 		this.cardReader = station.cardReader;
 		this.cardReader.register(this);
+		this.cardMethodSelected = null;
+		this.disableCardPayment();
+		this.disableCashPayment();
 	}
 
 /* ------------------------ General Methods --------------------------------------------------*/
@@ -269,6 +273,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 */
 	public void enableCashPayment() {
 		this.disableCardPayment();
+		this.cardMethodSelected = null;
 		this.station.coinSlot.enable();
 		this.station.coinTray.enable();
 		this.station.coinStorage.enable();
@@ -318,7 +323,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * enables all necessary devices (just CardReader in this case).
 	 * This is Step 2 of Pay with Credit use-case.
 	 */
-	public void enableCardPayment() {
+	public void enableCardPayment(String method) {
+		this.cardMethodSelected = method;
 		this.disableCashPayment();
 		this.station.cardReader.enable(); 
 	}
@@ -537,6 +543,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		}
 	}
 	
+	// Notifies the bank that the specified card should be blocked.
 	public void blockCardAtBank(Card card) {
 		int counter = 0;
 		while(counter < 10)
@@ -761,11 +768,14 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 
 	@Override
 	public void reactToCardDataReadEvent(CardReader reader, CardData data) {
-		if(data.getType().equals("Credit")) {
+		if(data.getType().equals("Credit") && this.cardMethodSelected.equals("Credit")) {
 			this.payCredit(reader, data);
 		}
-		else if(data.getType().equals("Debit")) {
+		else if(data.getType().equals("Debit") && this.cardMethodSelected.equals("Debit")) {
 			this.payDebit(reader, data);;
+		}
+		else {
+			this.cardReader.remove();
 		}
 	}
 }

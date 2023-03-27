@@ -331,12 +331,12 @@ public class PaymentWithCashTest {
 		}
 
 		@Override
-		public void selectPaymentMethod(String paymentMethod) {
+		public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
 			if (paymentMethod.equals("Cash")) {
-				paymentController.enableCashPayment();
+				instance.enableCashPayment();
 			}
 			else if(paymentMethod.equals("Credit") || paymentMethod.equals("Debit")) {
-				paymentController.enableCardPayment();
+				instance.enableCardPayment(paymentMethod);
 			}
 			
 		}
@@ -353,9 +353,9 @@ public class PaymentWithCashTest {
 		}
 
 		@Override
-		public Card getCustomerCard() {
+		public void insertCard(Card card, String pin) {
 			// TODO Auto-generated method stub
-			return null;
+			
 		}
 	
 	}
@@ -655,7 +655,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void addInvalidBillDenom_Test() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		try {
 			selfCheckoutStation.billInput.accept(billHundred);
@@ -683,7 +683,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void addInvalidBillCurr_Test() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		Bill usdBillTwenty = new Bill (20, Currency.getInstance("USD"));
 		try {
@@ -712,7 +712,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void addInvalidCoinDenom_Test() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		coinTrayObserver = new MyCoinTrayObserver();
 		try {
@@ -740,7 +740,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void addInvalidCoinCurr_Test() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		coinTrayObserver = new MyCoinTrayObserver();
 		Coin usdCoinQuarter = new Coin(new BigDecimal(0.25), Currency.getInstance("USD"));
@@ -764,7 +764,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payBillLessThanTotal_Test() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		try {
@@ -790,7 +790,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payCoinLessThanTotal_Test() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		try {
@@ -819,7 +819,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payTwiceBills() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		try {
@@ -861,7 +861,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payTwiceCoins() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		try {
@@ -901,7 +901,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payTwiceCoinThenBill() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
@@ -942,7 +942,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payTwiceBillThenCoin() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
@@ -982,7 +982,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payFullBillNoChange() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(50.00));
 		try {
@@ -1015,7 +1015,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payFullCoinNoChange() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(0.05));
 		try {
@@ -1046,7 +1046,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payFullBillWithChange_Test(){
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(10.00));
 		try {
@@ -1080,7 +1080,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void payFullCoinWithChange_Test(){
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(1.75));
 		try {
@@ -1113,7 +1113,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void totalChangeDueBillsThirtyDollars_Test() throws DisabledException, OverloadException{
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
@@ -1142,7 +1142,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void totalChangeDueCoinsDollarThirtyFive_Test() throws DisabledException{
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		coinObserverStub = new CoinDispenserStub();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
@@ -1172,7 +1172,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void totalChangeRemains() throws DisabledException{
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		coinObserverStub = new CoinDispenserStub();
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
@@ -1202,7 +1202,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void totalChangeDueMixed_Test() throws DisabledException, OverloadException{
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
@@ -1232,7 +1232,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void cartUpdate_Test() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.updateCartTotal(BigDecimal.valueOf(20.00));
 		paymentController.updateCartTotal(BigDecimal.valueOf(20.00));
 		assertTrue(BigDecimal.valueOf(40.00).compareTo(paymentController.getCartTotal()) == 0);
@@ -1250,7 +1250,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void emitEmptyNotSmallestBill_Test() throws OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		// Emptying billDispenser(20)
 		selfCheckoutStation.billDispensers.get(20).unload();
@@ -1278,7 +1278,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void emitEmptyNotSmallestCoin_Test() throws OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying coinDispenser(1.00)
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
@@ -1306,7 +1306,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void emitEmptyCoinInsteadOfBill_Test() throws OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		// Emptying billDispenser(5)
 		selfCheckoutStation.billDispensers.get(5).unload();
@@ -1341,7 +1341,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void totalChangeDueFiveDollars() throws DisabledException, OverloadException{
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);
@@ -1366,7 +1366,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void insufficientCoinChange() throws OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying coinDispensers
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
@@ -1398,7 +1398,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialCoinEnoughChange() throws OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying coinDispensers, to be reloaded with a single coin each
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
@@ -1456,7 +1456,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialBillEnoughChange() throws DisabledException, OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		// Emptying billDispensers, to be reloaded with a single bill each
 		selfCheckoutStation.billDispensers.get(5).unload();
@@ -1524,7 +1524,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialCoinNotEnoughChange() throws OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying coinDispensers, to be reloaded with a single coin each
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
@@ -1576,7 +1576,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void partialBillNotEnoughChange() throws OverloadException {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying billDispensers, to be reloaded with a single bill each
@@ -1643,7 +1643,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void coinTrayOverflow() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying other coinDispensers
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
@@ -1689,7 +1689,7 @@ public class PaymentWithCashTest {
 	@Test
 	public void coinTrayActiveCustomer() {
 		// Simulate customer selecting Cash payment method
-		customer.selectPaymentMethod("Cash");
+		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
 		// Emptying other coinDispensers
 		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();

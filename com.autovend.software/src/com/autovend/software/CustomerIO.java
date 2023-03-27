@@ -80,7 +80,7 @@ public interface CustomerIO {
 	/*
 	 * Simualates the customer selecting a payment method, to enable required devices
 	 */
-	public void selectPaymentMethod(String paymentMethod);
+	public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance);
 	
 	/*
 	 *signals that the transaction failed 
@@ -91,9 +91,9 @@ public interface CustomerIO {
 	 * Simulates the customer entering the amount they wish to pay by card
 	 */
 	public void setCardPaymentAmount(BigDecimal amount);
-	
+
 	/*
-	 * Will simulate customer inserting the card
+	 * Simulates the customer inserting a card.
 	 */
-	public Card getCustomerCard();
+	public void insertCard(Card card, String pin);
 }
