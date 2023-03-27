@@ -1627,10 +1627,6 @@ public class PaymentWithCashTest {
 		assertTrue(attendantSignalled);
 	}
 	
-<<<<<<< HEAD
-=======
-	
->>>>>>> refs/remotes/origin/PaymentControllerLogic_DebitCreditNew_-_Group_B
 	/* Test Case: When more than 20 coins are dispensed at once, but 
 	 * customer is collecting each coin as it comes out.
 	 * 
@@ -1641,11 +1637,7 @@ public class PaymentWithCashTest {
 	 * will be emptying the coin tray to ensure all coins can be dispensed.
 	 */
 	@Test
-<<<<<<< HEAD
 	public void coinTrayMoreThan20Coins() {
-=======
-	public void coinTrayLotsOfCoins() {
->>>>>>> refs/remotes/origin/PaymentControllerLogic_DebitCreditNew_-_Group_B
 		// Simulate customer selecting Cash payment method
 		customer.selectPaymentMethod("Cash", paymentController);
 		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
@@ -1664,11 +1656,6 @@ public class PaymentWithCashTest {
 		
 		coinTrayObserver = new MyCoinTrayObserver();
 		selfCheckoutStation.coinTray.register(coinTrayObserver);
-<<<<<<< HEAD
-=======
-		// Set customerActive to false, to simulate them paying attention to the coins and grabbing them
-		// as they are dispensed into the tray
->>>>>>> refs/remotes/origin/PaymentControllerLogic_DebitCreditNew_-_Group_B
 		
 		paymentController.setCartTotal(BigDecimal.valueOf(0.25));		
 		while(coinFalseNegative) {
