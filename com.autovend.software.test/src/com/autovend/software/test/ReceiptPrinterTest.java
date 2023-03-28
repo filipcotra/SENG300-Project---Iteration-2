@@ -454,4 +454,32 @@ public class ReceiptPrinterTest {
 		assertTrue(!receiptPrinterController.getLowInk());
 		assertTrue(receiptPrinterController.inkRemaining == 1048576);
 	}
+	
+	@Test public void PrintTestAfterRefillPaperAndInk() {
+		int paper = 8;
+		int ink = 70;
+		try {
+			selfCheckoutStation.printer.addInk(ink);
+			selfCheckoutStation.printer.addPaper(paper);
+			receiptPrinterController.setContents(ink, paper);
+		} catch (OverloadException e) {}
+		this.itemCostList.set(0,"5.35");
+		change = "3.00";
+		amountPaid = "45.00";
+		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
+		assertTrue(!receiptPrinterController.getLowPaper());
+		assertTrue(!receiptPrinterController.getLowInk());
+		assertTrue(receiptPrinterController.paperRemaining == 1024);
+		assertTrue(receiptPrinterController.inkRemaining == 1048576);
+		assertEquals(
+				  "item 1      $5.35\n"
+				+ "item 2      $17.00\n"
+				+ "item 3      $20.00\n"
+				+ "Total: $42.35\n"
+				+ "Paid: $45.00\n\n"
+				+ "Change: $3.00\n",
+				selfCheckoutStation.printer.removeReceipt());;
+	}
+	
+	
 }
