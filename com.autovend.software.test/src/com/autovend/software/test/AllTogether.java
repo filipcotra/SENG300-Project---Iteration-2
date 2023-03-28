@@ -1,10 +1,17 @@
-/** 
- * Filip Cotra - 30086750
- * Khondaker Samin Rashid - 30143490
- * Nishan Soni - 30147280
- * Aaron Tigley - 30159927
- * Zainab Bari - 30154224
- */
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
 
 package com.autovend.software.test;
 
@@ -41,6 +48,7 @@ import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.BaggingAreaController;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -54,6 +62,7 @@ public class AllTogether {
 	AddItemByScanningController addItemByScanningController;
 	PaymentControllerLogic paymentController;
 	PrintReceipt receiptPrinterController;
+	BaggingAreaController baggingAreaController;
 	SelfCheckoutStation selfCheckoutStation;
 	MyBillSlotObserver billObserver;
 	MyCustomerIO customer;
@@ -128,18 +137,77 @@ class MyCustomerIO implements CustomerIO {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public boolean selectAddOwnBags() {
+		// TODO Auto-generated method stub
+		return true;
+	}
+	
+	@Override
+	public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void notifyWeightDiscrepancyCustomerIO() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void notifyWeightDiscrepancyApprovedCustomerIO() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void signalPurchaseBags(int quantity) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void signalFinishedPurchasingBags() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void signalReadyForInteraction() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void signalPutPurchasedBagsOnBaggingArea() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getMembershipNumber() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean cancelMembershipInput() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void notifyBadMembershipNumberCustomerIO() {
+		// TODO Auto-generated method stub
+		
+	}
 		
 		
 	}
 	
 	class MyAttendantIO implements AttendantIO {
-
-		@Override
-		public boolean approveWeightDiscrepancy() {
-			// TODO Auto-generated method stub
-			return true;
-		}
-
+		
 		@Override
 		public void printDuplicateReceipt() {
 			// TODO Auto-generated method stub
@@ -148,6 +216,30 @@ class MyCustomerIO implements CustomerIO {
 
 		@Override
 		public void changeRemainsNoDenom(BigDecimal bigDecimal) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyAttendantIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void approveWeightDiscrepancy(CustomerIO customerIO) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void checkAddedOwnBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void acceptOwnBags() {
 			// TODO Auto-generated method stub
 			
 		}
@@ -238,7 +330,8 @@ class MyCustomerIO implements CustomerIO {
 				// Create and attach controllers to the station:
 				this.receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
-				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController);
+				this.baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
+				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController, baggingAreaController);
 	}
 	/* 
 	 * Test Case: The customer scans two items. 
