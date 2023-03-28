@@ -222,6 +222,7 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	/**
 	 * Method for calling print specifically, connecting software to hardware.
 	 * Checks the ink and paper flags before printing.
+	 * @param ch the character to be printed
 	 */
 	public void callPrint(char ch) throws Exception {
 		if (!(this.flagPaper == false || this.flagInk == false)) {
@@ -244,8 +245,12 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	}
 
 
-	/*
-	 * Method to store the amount of ink and paper in the printer so the software can estimate when ink/paper is low
+	/**
+	 * Method to store the amount of ink and paper initially in the printer so the software can estimate when ink/paper is low
+	 * also initializes variables to store how much ink/paper is remaining
+	 * 
+	 * @param ink the amount of ink added to the printer
+	 * @param paper the amount of paper added to the printer
 	 */
 	public void setContents(int ink, int paper){
 		this.initialInk += ink;
@@ -254,21 +259,26 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		this.paperRemaining += paper;
 	}
 
-
+	/**
+	 * This method calculates if the amount of paper in the printer is low and sets an appropriate flag
+	 */
 	public void lowPaper(){
 		if (paperRemaining <= initialPaper*.25){
 			this.lowPaper = true;
 		}
 	}
 
+	/**
+	 * This method calculates if the amount of ink in the printer is low and sets an appropriate flag
+	 */
 	public void lowInk(){
 		if (inkRemaining <= initialInk*.25){
 			this.lowInk = true;
 		}
 	}
 	
-	/*
-	 * Method used to refillInk once lowInk is detected, if so enough ink is added to fill the ink storage to the maximum amount
+	/**
+	 * Method used to refillInk once lowInk is detected, calls the attendant to refill the ink and unsuspends the system
 	 */
 	public void refillInk(){
 		if(this.lowInk == true) {
@@ -278,8 +288,8 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 	
-	/*
-	 * Method used to refillInk once lowPaper is detected, if so enough paper is added to fill the paper storage to the maximum amount
+	/**
+	 * Method used to refillInk once lowPaper is detected, calls the attendant to refill the paper and unsuspends the system
 	 */
 	public void refillPaper(){
 		if(this.lowPaper == true) {
@@ -289,15 +299,17 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 	
-	/*
+	/**
 	 * A getter to return this.lowInk to check if lowInk() is called
+	 * @return this.lowInk
 	 */
 	public boolean getLowInk(){
 		return this.lowInk;
 	}
 	
-	/*
+	/**
 	 * A getter to return this.lowPaper to check if lowPaper() is called
+	 * @return this.lowPaper
 	 */
 	public boolean getLowPaper(){
 		return this.lowPaper;

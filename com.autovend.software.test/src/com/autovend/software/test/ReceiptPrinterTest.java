@@ -49,6 +49,10 @@ public class ReceiptPrinterTest {
 	final PrintStream originalOut = System.out;
 	ByteArrayOutputStream baos;
 	PrintStream ps;
+
+	/**
+	 * a stub to simulate interactions with the customer
+	 */
 	class MyCustomerIO implements CustomerIO {
 	
 			@Override
@@ -87,6 +91,9 @@ public class ReceiptPrinterTest {
 		
 		}
 	
+	/**
+	 * A stub to simulate interactions with the attendant.
+	 */
 	class MyAttendantIO implements AttendantIO {
 	
 		@Override
@@ -106,6 +113,10 @@ public class ReceiptPrinterTest {
 			
 		}
 
+		/**
+		 * Method that simulates the attendant refilling the ink physically and in software. 
+		 * We assume that the ink is refilled to its maximum capacity.
+		 */
 		@Override
 		public void acknowledgeLowInk() {
 			try{
@@ -116,7 +127,10 @@ public class ReceiptPrinterTest {
 			}
 
 		}
-
+		/**
+		 * Method that simulates the attendant refilling the paper physically and in software. 
+		 * We assume that the paper is refilled to its maximum capacity.
+		 */
 		@Override
 		public void acknowledgeLowPaper() {
 			try{
@@ -128,6 +142,10 @@ public class ReceiptPrinterTest {
 		}
 	}
 	
+
+	/**
+	 * Method to setup before the tests
+	 */
 	@Before
 	public void setUp() {
 		// Setting up new print stream to catch printed output, used to test terminal output
@@ -347,7 +365,7 @@ public class ReceiptPrinterTest {
 	/*
 	 * Test: to see if the low ink works
 	 * Expected: low ink is called, attendant refills and therefore low ink should be false
-	 * Result: low ink is false
+	 * Result: low ink is false and the printer is filled up with ink
 	 */
 	@Test public void lowInkTest() {
 
@@ -361,12 +379,13 @@ public class ReceiptPrinterTest {
 		
 		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
 		assertTrue(!receiptPrinterController.getLowInk());
+		assertTrue(receiptPrinterController.inkRemaining == 1048576);
 	}
 	
 	/*
 	 * Test: to see if the paper ink works
 	 * Expected: low paper is called, attendant refills and therefore low paper should be false
-	 * Result: low paper is false
+	 * Result: low paper is false and the printer is filled up with paper
 	 */
 	@Test public void lowPaperTest() {
 		int paper = 8;
@@ -379,12 +398,13 @@ public class ReceiptPrinterTest {
 		amountPaid = "45.00";
 		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
 		assertTrue(!receiptPrinterController.getLowPaper());
+		assertTrue(receiptPrinterController.paperRemaining == 1024);
 	}
 	
 	/*
 	 * Test: to see if the paper ink and low paper works together
 	 * Expected: low paper and low ink is called, attendant refills and therefore low paper and low ink should be false
-	 * Result: low paper is false and low ink is false
+	 * Result: low paper is false and low ink is false and the printer is full on ink and paper
 	 */
 	@Test public void lowBothTest() {
 		int paper = 8;
@@ -399,5 +419,7 @@ public class ReceiptPrinterTest {
 		receiptPrinterController.print(this.itemNameList, this.itemCostList, change, amountPaid);
 		assertTrue(!receiptPrinterController.getLowPaper());
 		assertTrue(!receiptPrinterController.getLowInk());
+		assertTrue(receiptPrinterController.paperRemaining == 1024);
+		assertTrue(receiptPrinterController.inkRemaining == 1048576);
 	}
 }
