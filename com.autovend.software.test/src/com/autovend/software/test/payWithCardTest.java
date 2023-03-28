@@ -1,3 +1,19 @@
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
+
+
 package com.autovend.software.test;
 
 import static org.junit.Assert.assertEquals;
@@ -151,6 +167,72 @@ public class payWithCardTest {
 			catch(Exception e) {
 			}
 		}
+
+		@Override
+		public void notifyWeightDiscrepancyCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPurchaseBags(int quantity) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalFinishedPurchasingBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalReadyForInteraction() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPutPurchasedBagsOnBaggingArea() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public String getMembershipNumber() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean cancelMembershipInput() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void notifyBadMembershipNumberCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean selectAddOwnBags() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 		
 	// Set up bankIO stub to use in test cases
@@ -202,11 +284,6 @@ public class payWithCardTest {
 	class MyAttendantIO implements AttendantIO {
 
 		@Override
-		public boolean approveWeightDiscrepancy() {
-			return false;
-		}
-
-		@Override
 		public void printDuplicateReceipt() {
 			// TODO Auto-generated method stub
 			
@@ -214,6 +291,42 @@ public class payWithCardTest {
 
 		@Override
 		public void changeRemainsNoDenom(BigDecimal changeLeft) {
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyAttendantIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void approveWeightDiscrepancy(CustomerIO customerIO) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void checkAddedOwnBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void acceptOwnBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void acknowledgeLowInk() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void acknowledgeLowPaper() {
+			// TODO Auto-generated method stub
 			
 		}
 		

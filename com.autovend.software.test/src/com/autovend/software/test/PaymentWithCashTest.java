@@ -1,10 +1,17 @@
-/** 
- * Filip Cotra - 30086750
- * Khondaker Samin Rashid - 30143490
- * Nishan Soni - 30147280
- * Aaron Tigley - 30159927
- * Zainab Bari - 30154224
- */
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
 
 package com.autovend.software.test;
 import static org.junit.Assert.assertEquals;
@@ -317,6 +324,7 @@ public class PaymentWithCashTest {
 		@Override
 		public void removeCoin(CoinTray tray) {
 			tray.collectCoins();
+		}
 
 		@Override
 		public void notifyWeightDiscrepancyCustomerIO() {
@@ -340,6 +348,8 @@ public class PaymentWithCashTest {
 		@Override
 
 		public void payWithCreditComplete(BigDecimal amountDue) {
+			
+		}
 
 		public void signalFinishedPurchasingBags() {
 
@@ -350,6 +360,8 @@ public class PaymentWithCashTest {
 		@Override
 
 		public void payWithDebitComplete(BigDecimal amountDue) {
+			
+		}
 
 		public void signalReadyForInteraction() {
 
@@ -378,6 +390,8 @@ public class PaymentWithCashTest {
 
 		@Override
 		public void transactionFailure() {
+			
+		}
 
 		@Override
 		public void signalPutPurchasedBagsOnBaggingArea() {
@@ -407,6 +421,8 @@ public class PaymentWithCashTest {
 		@Override
 
 		public void insertCard(Card card, String pin) {
+			
+		}
 
 		public boolean selectAddOwnBags() {
 			// TODO Auto-generated method stub
@@ -459,6 +475,7 @@ public class PaymentWithCashTest {
 			@Override
 			public void acceptOwnBags() {
 				// TODO Auto-generated method stub
+			}
 				
 
 			public void acknowledgeLowInk() {

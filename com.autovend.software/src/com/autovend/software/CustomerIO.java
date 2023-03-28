@@ -116,7 +116,7 @@ public interface CustomerIO {
 	 * Simulates the customer inserting a card.
 	 */
 	public void insertCard(Card card, String pin);
-=======
+
 	/**
 	 * A signal from the Customer IO to the station, notifying the station that the Customer wants
 	 * to purchase re-usable bags.

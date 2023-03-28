@@ -149,7 +149,7 @@ class MyCustomerIO implements CustomerIO {
 
 	@Override
 	public void removeCoin(CoinTray tray) {
-
+	}
 	
 	@Override
 	public boolean selectAddOwnBags() {
@@ -172,6 +172,8 @@ class MyCustomerIO implements CustomerIO {
 	@Override
 
 	public void payWithCreditComplete(BigDecimal amountDue) {
+		
+	}
 
 	public void notifyWeightDiscrepancyApprovedCustomerIO() {
 
@@ -182,6 +184,8 @@ class MyCustomerIO implements CustomerIO {
 	@Override
 
 	public void payWithDebitComplete(BigDecimal amountDue) {
+		
+	}
 
 	public void signalPurchaseBags(int quantity) {
 
@@ -192,6 +196,8 @@ class MyCustomerIO implements CustomerIO {
 	@Override
 
 	public void transactionFailure() {
+		
+	}
 
 	public void signalFinishedPurchasingBags() {
 
@@ -202,6 +208,8 @@ class MyCustomerIO implements CustomerIO {
 	@Override
 
 	public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+		
+	}
 
 	public void signalReadyForInteraction() {
 
@@ -212,6 +220,8 @@ class MyCustomerIO implements CustomerIO {
 	@Override
 
 	public void setCardPaymentAmount(BigDecimal amount) {
+		
+	}
 
 	public void signalPutPurchasedBagsOnBaggingArea() {
 
@@ -222,6 +232,8 @@ class MyCustomerIO implements CustomerIO {
 	@Override
 
 	public void insertCard(Card card, String pin) {
+		
+	}
 
 	public String getMembershipNumber() {
 		// TODO Auto-generated method stub
@@ -408,9 +420,7 @@ class MyCustomerIO implements CustomerIO {
 				// Create and attach controllers to the station:
 				this.receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
-				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController);
-
-				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
 				this.baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
 				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController, baggingAreaController);
 
