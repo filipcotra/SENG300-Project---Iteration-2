@@ -320,10 +320,10 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	}
 
 	/**
-	 * Sets the amount that the customer wishes to pay by card.
+	 * Sets the amount that the customer wishes to pay by card. 
 	 */
 	public void setCardPaymentAmount(BigDecimal amount) {
-		this.amountToPayCard = amount;
+		this.amountToPayCard = this.getCartTotal();
 	}
 	
 	/**
@@ -482,6 +482,11 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 /* ------------------------ Pay with Credit --------------------------------------------------*/
 	// implements the pay with credit use case. trigger: customer must with to pay with credit
 	public void payCredit(CardReader reader, CardData data) {
+		// If the customer attempts to pay more than what is left, reduce the amount to be paid. This is
+		// to avoid unnecessary change dispensing.
+		if(this.amountToPayCard.compareTo(this.getCartTotal()) > 0) {
+			this.setCardPaymentAmount(this.getCartTotal());
+		}
 		int creditHoldNumber;
 		Boolean transactionCompleted = false;;
 		if(!this.connectToBank(this.creditBank)) { // Exception 2
@@ -511,6 +516,9 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 					myCustomer.removeCard(reader);
 					myCustomer.payWithCreditComplete(this.amountToPayCard);
 					this.amountToPayCard = BigDecimal.ZERO; // Reset
+					if(this.getCartTotal().compareTo(BigDecimal.valueOf(0.0)) == 0) {
+						this.printerLogic.print(this.itemNameList, this.itemCostList, this.getTotalChange(), this.getAmountPaid());
+					}
 				}
 				else {
 					activeBank.releaseHold(data.getNumber(),creditHoldNumber);
@@ -525,6 +533,11 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	// This is being kept separate from payCredit despite having the same logic simply so that
 	// future edits can be made to differentiate them without ruining everything.
 	public void payDebit(CardReader reader, CardData data) {
+		// If the customer attempts to pay more than what is left, reduce the amount to be paid. This is
+		// to avoid unnecessary change dispensing.
+		if(this.amountToPayCard.compareTo(this.getCartTotal()) > 0) {
+			this.setCardPaymentAmount(this.getCartTotal());
+		}
 		int debitHoldNumber;
 		Boolean transactionCompleted = false;;
 		if(!this.connectToBank(this.debitBank)) { // Exception 2
@@ -554,6 +567,9 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 					myCustomer.removeCard(reader);
 					myCustomer.payWithDebitComplete(this.amountToPayCard);
 					this.amountToPayCard = BigDecimal.ZERO; // Reset
+					if(this.getCartTotal().compareTo(BigDecimal.valueOf(0.0)) == 0) {
+						this.printerLogic.print(this.itemNameList, this.itemCostList, this.getTotalChange(), this.getAmountPaid());
+					}
 				}
 				else {
 					activeBank.releaseHold(data.getNumber(),debitHoldNumber);

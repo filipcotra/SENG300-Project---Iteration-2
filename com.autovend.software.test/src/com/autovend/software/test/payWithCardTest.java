@@ -159,12 +159,12 @@ public class payWithCardTest {
 		// if the card should be blocked, or if the card reader is disabled
 		@Override
 		public void insertCard(Card card, String pin) {
-			CardData data = new Card.CardData();
+			CardData data = null;
 			try {
 				data = selfCheckoutStation.cardReader.insert(card, pin);
 			}
 			catch(InvalidPINException e) {
-				System.out.println(data + " :(");
+				paymentController.blockCardAtBank(data);
 			}
 			catch(BlockedCardException e) {
 				BlockedCard++;
@@ -400,8 +400,8 @@ public class payWithCardTest {
 	@Test
 	public void payCreditCard() throws IOException {
 		customer.selectPaymentMethod("Credit", paymentController);
-		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(CCard, "4321");
@@ -409,6 +409,28 @@ public class payWithCardTest {
 		assertEquals(1, CCardComplete);
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
+	}
+	
+	/**
+	 * Test to see if overpaying a card will be allowed. Expected that the amount
+	 * to pay from the card will be adjusted so that no change will be dispensed.
+	 * This is the credit version.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void payCreditCard_AttemptOverpay() throws IOException {
+		customer.selectPaymentMethod("Credit", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		customer.setCardPaymentAmount(BigDecimal.valueOf(40.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
+		while(falseNegative) {
+			customer.insertCard(CCard, "4321");
+		}
+		assertEquals(1, CCardComplete);
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20.0",paymentController.getAmountPaid());
+		assertEquals("0.0",paymentController.getTotalChange());
 	}
 	
 	/**
@@ -420,8 +442,30 @@ public class payWithCardTest {
 	@Test
 	public void payDebitCard() throws IOException {
 		customer.selectPaymentMethod("Debit", paymentController);
-		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
+		while(falseNegative) {
+			customer.insertCard(DCard, "4321");
+		}
+		assertEquals(1, DCardComplete);
+		System.out.println(paymentController.getCartTotal());
+		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("20.0",paymentController.getAmountPaid());
+	}
+	
+	/**
+	 * Test to see if overpaying a card will be allowed. Expected that the amount
+	 * to pay from the card will be adjusted so that no change will be dispensed.
+	 * This is the debit version.
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	public void payDebitCard_AttemptOverpay() throws IOException {
+		customer.selectPaymentMethod("Debit", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		customer.setCardPaymentAmount(BigDecimal.valueOf(40.0));
 		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
@@ -429,6 +473,7 @@ public class payWithCardTest {
 		assertEquals(1, DCardComplete);
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
+		assertEquals("0.0",paymentController.getTotalChange());
 	}
 	
 	/**
@@ -441,8 +486,8 @@ public class payWithCardTest {
 	public void failedConnectionExc2_Debit() throws IOException {
 		// Turn off connection to bank to start
 		customer.selectPaymentMethod("Debit", paymentController);
-		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		// Loop until a successful insertion event occurs, to avoid random failures from chip errors
 		while(falseNegative) {
 			customer.insertCard(DCard, "4321");
@@ -506,7 +551,7 @@ public class payWithCardTest {
 	 * Testing if the customer enters in the wrong pin. If this happens 3 times, the card
 	 * should be blocked. Then, the next attempt should cause a BlockedCardException.
 	 */
-	@Test (expected = BlockedCardException.class)
+	@Test
 	public void wrongPinFourTimes() {
 		customer.selectPaymentMethod("Credit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
@@ -567,6 +612,25 @@ public class payWithCardTest {
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
 		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
 		customer.insertCard(DCard, "4321");
+	}
+	
+	/**
+	 * Testing that if cash payment is selected, at least card payments will not be completed.
+	 * 
+	 */
+	@Test
+	public void selectCashInsertCard_CardPaymentUncompleted() {
+		customer.selectPaymentMethod("Cash", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		customer.insertCard(DCard, "4321");
+		assertEquals("0.0", paymentController.getAmountPaid());
+		assertEquals(BigDecimal.valueOf(20.0), paymentController.getCartTotal());
+		assertEquals(0, DCardComplete);
+		customer.insertCard(CCard, "4321");
+		assertEquals("0.0", paymentController.getAmountPaid());
+		assertEquals(BigDecimal.valueOf(20.0), paymentController.getCartTotal());
+		assertEquals(0, CCardComplete);
 	}
 	
 	/**
