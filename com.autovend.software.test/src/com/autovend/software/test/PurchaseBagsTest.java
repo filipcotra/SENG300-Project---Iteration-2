@@ -26,8 +26,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
 import com.autovend.Card;
+import com.autovend.Numeral;
 import com.autovend.Card.CardData;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.CardReader;
@@ -133,7 +135,7 @@ public class PurchaseBagsTest {
 	 * 		- CustomerIO has been signalled that the station is ready for interaction.
 	 */
 	@Test
-	public void finishedPurchasingBags() {
+	public void testFinishedPurchasingBagsSignal() {
 		
 		//Initially going to set purchasingBags flag to true. The flag being initially true or false does not change the results.
 		baggingAreaController.purchasingBags = true;
@@ -157,8 +159,87 @@ public class PurchaseBagsTest {
 		assertTrue("CustomerIO should have reacted to interactionReadySignal.", customerIO.interactionReadySignal);
 	}
 	
+	/**
+	 * This test will simply check if an Attendant approves a weightDiscrepancy after a Customer has placed their purchased bags in the bagging area,
+	 * then the CustomerIO is signalled correctly.
+	 * 
+	 * Expected Results:
+	 * 		- No Exceptions.
+	 * 		- purchasingBags flag should be set to false.
+	 * 		- CustomerIO has been signalled that the purchasing bags operation has been completed.
+	 * 		- CustomerIO has been signalled that the station is ready for interaction.
+	 */
+	@Test
+	public void testFinishedPurchasingBagsSignalAfterDiscrepancyApproval() {
+		
+		//Initially going to set purchasingBags flag to true. The flag being initially true or false does not change the results.
+		baggingAreaController.purchasingBags = true;
+		
+		//Ensure that CustomerIO has not yet received a signal that the operation has been completed.
+		assertFalse("CustomerIO should not have reacted to finishedPurchasingBagsSignal yet.", customerIO.finishedPurchasingBagsSignal);
+		
+		//Ensure that the CustomerIO has not yet received a signal that the station is ready for interaction.
+		assertFalse("CustomerIO should not have reacted to interactionReadySignal yet.", customerIO.interactionReadySignal);
+		
+		//Attendant will approve a weightDiscrepancy
+		attendantIO.approveWeightDiscrepancy(customerIO);
+		
+		//Assert that the purchasingBags flag is set to false
+		assertFalse("purchasingBags flag should be set to false.", baggingAreaController.purchasingBags);
+		
+		//Assert that CustomerIO received a signal that the operation has been completed.
+		assertTrue("CustomerIO should have reacted to finishedPurchasingBagsSignal.", customerIO.finishedPurchasingBagsSignal);
+		
+		//Assert that the CustomerIO received a signal that the station is ready for interaction.
+		assertTrue("CustomerIO should have reacted to interactionReadySignal.", customerIO.interactionReadySignal);
+	}
+	
+	/**
+	 * This test will simply check if the customer places their bags and no discrepancy is detected, then the CustomerIO is signalled correctly.
+	 * 
+	 * Expected Results:
+	 * 		- No Exceptions.
+	 * 		- purchasingBags flag should be set to false.
+	 * 		- CustomerIO has been signalled that the purchasing bags operation has been completed.
+	 * 		- CustomerIO has been signalled that the station is ready for interaction.
+	 */
+	@Test
+	public void testFinishedPurchasingBagsSignalAfterPlacingBags() {
+		
+		//Initially going to set purchasingBags flag to true. The flag being initially true or false does not change the results.
+		baggingAreaController.purchasingBags = true;
+		
+		//Ensure that CustomerIO has not yet received a signal that the operation has been completed.
+		assertFalse("CustomerIO should not have reacted to finishedPurchasingBagsSignal yet.", customerIO.finishedPurchasingBagsSignal);
+		
+		//Ensure that the CustomerIO has not yet received a signal that the station is ready for interaction.
+		assertFalse("CustomerIO should not have reacted to interactionReadySignal yet.", customerIO.interactionReadySignal);
+		
+		//Set baggingAreaController's expected weight to REUSABLE BAG WEIGHT
+		baggingAreaController.expectedWeight = baggingAreaController.REUSABLE_BAG_WEIGHT;
+		
+		//Create a test bag unit product
+		Barcode testBagBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
+		BarcodedUnit testBag = new BarcodedUnit(testBagBarcode, baggingAreaController.REUSABLE_BAG_WEIGHT);
+		
+		//Simulate placing the bag on the bagging area
+		station.baggingArea.add(testBag);
+		
+		//In this state, weightDiscrepancy should have been reacted to and handled
+		
+		//Assert that the purchasingBags flag is set to false
+		assertFalse("purchasingBags flag should be set to false.", baggingAreaController.purchasingBags);
+		
+		//Assert that CustomerIO received a signal that the operation has been completed.
+		assertTrue("CustomerIO should have reacted to finishedPurchasingBagsSignal.", customerIO.finishedPurchasingBagsSignal);
+		
+		//Assert that the CustomerIO received a signal that the station is ready for interaction.
+		assertTrue("CustomerIO should have reacted to interactionReadySignal.", customerIO.interactionReadySignal);
+	}
+	
 	class MyCustomerIO implements CustomerIO {
 		
+		//Various signal flags
 		boolean purchaseBagsSignal = false;
 		int purchaseBagsQuantity = 0;
 		boolean finishedPurchasingBagsSignal = false;
@@ -224,7 +305,10 @@ public class PurchaseBagsTest {
 			// TODO Auto-generated method stub
 			
 		}
-
+		
+		/**
+		 * Reaction to a signal to purchase bags
+		 */
 		@Override
 		public void signalPurchaseBags(int quantity) {
 			this.purchaseBagsSignal = true;
@@ -338,9 +422,13 @@ public class PurchaseBagsTest {
 			
 		}
 
+		/**
+		 * Reaction to a weight discrepancy approval
+		 */
 		@Override
 		public void approveWeightDiscrepancy(CustomerIO customerIO) {
-			// TODO Auto-generated method stub
+			//Calls weightDiscrepancyApproved in the bagging area controller.
+			baggingAreaController.weightDiscrepancyApproved();
 			
 		}
 
