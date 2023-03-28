@@ -1,16 +1,23 @@
-/** 
- * Filip Cotra - 30086750
- * Khondaker Samin Rashid - 30143490
- * Nishan Soni - 30147280
- * Aaron Tigley - 30159927
- * Zainab Bari - 30154224
- */
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
+
 
 package com.autovend.software.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -22,7 +29,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
-import com.autovend.Bill;
 import com.autovend.Card;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.CoinTray;
@@ -95,6 +101,7 @@ public class ReceiptPrinterTest {
 
 			@Override
 			public void removeCoin(CoinTray tray) {
+			}
 
 			
 			@Override
@@ -118,6 +125,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void payWithCreditComplete(BigDecimal amountDue) {
+			}
 
 			public void notifyWeightDiscrepancyApprovedCustomerIO() {
 
@@ -127,6 +135,7 @@ public class ReceiptPrinterTest {
 
 			@Override
 			public void payWithDebitComplete(BigDecimal amountDue) {
+			}
       
 			public void signalPurchaseBags(int quantity) {
 
@@ -137,6 +146,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void transactionFailure() {
+			}
 
 			public void signalFinishedPurchasingBags() {
 
@@ -147,6 +157,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+			}
 
 			public void signalReadyForInteraction() {
 
@@ -157,6 +168,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void setCardPaymentAmount(BigDecimal amount) {
+			}
 
 			public void signalPutPurchasedBagsOnBaggingArea() {
 
@@ -167,6 +179,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void insertCard(Card card, String pin) {
+			}
 
 			public String getMembershipNumber() {
 				// TODO Auto-generated method stub
@@ -187,6 +200,7 @@ public class ReceiptPrinterTest {
 			}
 		
 		}
+		
 	
 	/**
 	 * A stub to simulate interactions with the attendant.
@@ -226,6 +240,7 @@ public class ReceiptPrinterTest {
 		@Override
 		public void acceptOwnBags() {
 			// TODO Auto-generated method stub
+		}
 			
 
 		/**
