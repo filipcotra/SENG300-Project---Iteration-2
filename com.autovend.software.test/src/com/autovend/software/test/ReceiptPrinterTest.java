@@ -95,6 +95,7 @@ public class ReceiptPrinterTest {
 
 			@Override
 			public void removeCoin(CoinTray tray) {
+			}
 
 			
 			@Override
@@ -118,6 +119,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void payWithCreditComplete(BigDecimal amountDue) {
+			}
 
 			public void notifyWeightDiscrepancyApprovedCustomerIO() {
 
@@ -127,6 +129,7 @@ public class ReceiptPrinterTest {
 
 			@Override
 			public void payWithDebitComplete(BigDecimal amountDue) {
+			}
       
 			public void signalPurchaseBags(int quantity) {
 
@@ -137,6 +140,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void transactionFailure() {
+			}
 
 			public void signalFinishedPurchasingBags() {
 
@@ -147,6 +151,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+			}
 
 			public void signalReadyForInteraction() {
 
@@ -157,6 +162,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void setCardPaymentAmount(BigDecimal amount) {
+			}
 
 			public void signalPutPurchasedBagsOnBaggingArea() {
 
@@ -167,6 +173,7 @@ public class ReceiptPrinterTest {
 			@Override
 
 			public void insertCard(Card card, String pin) {
+			}
 
 			public String getMembershipNumber() {
 				// TODO Auto-generated method stub
@@ -187,6 +194,7 @@ public class ReceiptPrinterTest {
 			}
 		
 		}
+		
 	
 	/**
 	 * A stub to simulate interactions with the attendant.
@@ -226,6 +234,7 @@ public class ReceiptPrinterTest {
 		@Override
 		public void acceptOwnBags() {
 			// TODO Auto-generated method stub
+		}
 			
 
 		/**
