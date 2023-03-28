@@ -152,6 +152,16 @@ class MyCustomerIO implements CustomerIO {
 			
 		}
 
+		@Override
+		public void acknowledgeLowInk() {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public void acknowledgeLowPaper() {
+			// TODO Auto-generated method stub
+		}
+
 		
 	}
 	@Before
