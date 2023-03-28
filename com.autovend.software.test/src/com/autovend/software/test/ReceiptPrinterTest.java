@@ -554,6 +554,14 @@ public class ReceiptPrinterTest {
 		assertTrue(receiptPrinterController.inkRemaining == 1048576);
 	}
 	
+	/*
+	 * Test: Checks to make sure that paper is low before the print, and that attendant io refills after the print
+	 * paper should be set to max after print
+	 * Expected: paper should be 8 (the set amount) before the print (low enough to activate low paper but not enough
+	 * to activate no paper, low paper after the print should be false as paper roll should've been refilled by attendant
+	 * remaining paper should then be max
+	 * Result: as expected
+	 */
 	@Test public void checkPaperBeforeRefill() {
 			int paper = 8;
 			try {
@@ -570,6 +578,14 @@ public class ReceiptPrinterTest {
 			
 	}
 	
+	/*
+	 * Test: Checks to make sure that ink is low before the print, and that attendant io refills after the print
+	 * ink should be set to max after print
+	 * Expected: ink should be 70 (the set amount) before the print (low enough to activate low ink but not enough
+	 * to activate no ink, low ink after the print should be false as ink should've been refilled by attendant
+	 * remaining ink should then be max
+	 * Result: as expected
+	 */
 	@Test public void checkInkBeforeRefill() {
 
 		try {
@@ -586,6 +602,13 @@ public class ReceiptPrinterTest {
 		assertTrue(receiptPrinterController.inkRemaining == 1048576);
 	}
 	
+	/*
+	 * Test: Checks to make sure that the refill after low ink and paper work and we are able to print the next customers
+	 * receipt prints out right
+	 * Expected: ink and paper should be max after print as attendant io should have refilled everything, next reciept should
+	 * be printed out right
+	 * Result: as expected
+	 */
 	@Test public void PrintTestAfterRefillPaperAndInk() {
 		int paper = 8;
 		int ink = 70;
@@ -609,7 +632,18 @@ public class ReceiptPrinterTest {
 				+ "Total: $42.35\n"
 				+ "Paid: $45.00\n\n"
 				+ "Change: $3.00\n",
-				selfCheckoutStation.printer.removeReceipt());;
+				selfCheckoutStation.printer.removeReceipt());
+		this.itemNameList.clear();
+		this.itemCostList.clear();
+		this.itemNameList.add("item 1");
+		this.itemCostList.add("3.00");
+		receiptPrinterController.print(this.itemNameList, this.itemCostList, "2.00", "5.00");
+		assertEquals(
+				  "item 1      $3.00\n"
+				+ "Total: $3.00\n"
+				+ "Paid: $5.00\n\n"
+				+ "Change: $2.00\n",
+				selfCheckoutStation.printer.removeReceipt());
 	}
 	
 	
