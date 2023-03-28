@@ -138,6 +138,7 @@ public class PaymentWithCashTest {
 			
 		}
 
+		// Check which bills were ejected
 		@Override
 		public void reactToBillsEmptyEvent(BillDispenser dispenser) {
 			int billValue = 0;
