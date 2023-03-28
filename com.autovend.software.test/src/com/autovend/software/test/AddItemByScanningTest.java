@@ -37,13 +37,14 @@ import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.SelfCheckoutStation;
+import com.autovend.external.CardIssuer;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
 
 import com.autovend.software.BaggingAreaController;
-
+import com.autovend.software.ConnectionIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -70,6 +71,18 @@ public class AddItemByScanningTest {
 	PrintStream ps;
 	boolean approveFlag;
 	BarcodedProduct actualProduct;
+	MyConnectionIO connection;
+	
+	class MyConnectionIO implements ConnectionIO{
+
+		@Override
+		public boolean connectTo(CardIssuer bank) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+		
+	}
+	
 	class MyCustomerIO implements CustomerIO {
 		
 		
@@ -308,9 +321,10 @@ public class AddItemByScanningTest {
 		ProductDatabases.BARCODED_PRODUCT_DATABASE.put(barcode, testProduct);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
+		connection = new MyConnectionIO();
 		
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, connection, receiptPrinterController);
 		
 		baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
 		

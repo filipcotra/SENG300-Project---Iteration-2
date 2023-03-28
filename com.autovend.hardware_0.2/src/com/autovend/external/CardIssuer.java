@@ -43,7 +43,7 @@ public class CardIssuer {
 	 */
 	public boolean block(String cardNumber) {
 		CardRecord cr = database.get(cardNumber);
-
+		
 		if(cr == null)
 			return false;
 
@@ -210,7 +210,7 @@ public class CardIssuer {
 	 */
 	public int authorizeHold(String cardNumber, BigDecimal amount) {
 		CardRecord cr = database.get(cardNumber);
-
+		
 		if(cr == null)
 			return -1;
 

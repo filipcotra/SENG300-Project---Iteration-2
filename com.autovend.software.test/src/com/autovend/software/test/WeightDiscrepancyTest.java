@@ -36,10 +36,12 @@ import com.autovend.devices.BillSlot;
 import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.SelfCheckoutStation;
+import com.autovend.external.CardIssuer;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.BaggingAreaController;
+import com.autovend.software.ConnectionIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -61,6 +63,7 @@ public class WeightDiscrepancyTest {
 	public Barcode marsBarBarcode;
 	public SellableUnit mb;
 	public BigDecimal mbPrice;
+	MyConnectionIO connection;
 
 	@Before
 	public void SetUp() {
@@ -70,8 +73,9 @@ public class WeightDiscrepancyTest {
 		this.station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {10,20}, new BigDecimal[] {BigDecimal.ONE}, scaleMaximumWeight, scaleSensitivity);
 		this.attendantIO = new MyAttendantIO();
 		this.customerIO = new MyCustomerIO();
+		this.connection = new MyConnectionIO();
 		this.printerController = new PrintReceipt(station, station.printer, customerIO, attendantIO);
-		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, printerController);
+		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, connection, printerController);
 		this.baggingAreaController = new BaggingAreaController(station, customerIO, attendantIO, paymentController);
 		marsBarBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
 		mbPrice = new BigDecimal(1.25);
@@ -331,6 +335,16 @@ public class WeightDiscrepancyTest {
 		@Override
 		public void acknowledgeLowPaper() {
 			// TODO Auto-generated method stub
+		}
+		
+	}
+	
+	class MyConnectionIO implements ConnectionIO{
+
+		@Override
+		public boolean connectTo(CardIssuer bank) {
+			// TODO Auto-generated method stub
+			return false;
 		}
 		
 	}

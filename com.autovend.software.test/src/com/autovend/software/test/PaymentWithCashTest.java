@@ -66,7 +66,9 @@ import com.autovend.devices.observers.CoinDispenserObserver;
 import com.autovend.devices.observers.CoinSlotObserver;
 import com.autovend.devices.observers.CoinTrayObserver;
 import com.autovend.devices.observers.CoinValidatorObserver;
+import com.autovend.external.CardIssuer;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.ConnectionIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -114,8 +116,19 @@ public class PaymentWithCashTest {
 	Boolean attendantSignalled;
 	Boolean coinFalseNegative;
 	Boolean billFalseNegative;
+	MyConnectionIO connection;
 
 /* ---------------------------------- Stubs ---------------------------------------------------*/
+	
+	class MyConnectionIO implements ConnectionIO{
+
+		@Override
+		public boolean connectTo(CardIssuer bank) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+		
+	}
 	
 	class BillDispenserStub implements BillDispenserObserver {
 
@@ -611,6 +624,7 @@ public class PaymentWithCashTest {
 						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
+		connection = new MyConnectionIO();
 		ejectedBills = new ArrayList<Integer>();
 		ejectedCoins = new ArrayList<BigDecimal>();
 		/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
@@ -657,7 +671,7 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, connection, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
 		coinFalseNegative = true;
 		billFalseNegative = true;

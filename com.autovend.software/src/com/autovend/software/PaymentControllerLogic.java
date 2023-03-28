@@ -94,7 +94,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	private CardIssuer debitBank;
 	private CardIssuer activeBank;
 	private CardReader cardReader;
-	String cardMethodSelected;
+	private String cardMethodSelected;
+	private ConnectionIO myConnection;
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -110,7 +111,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * @param attendant
 	 * 		AttendantIO interface that is monitoring the machine
 	 */
-	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, PrintReceipt printerLogic) {
+	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, ConnectionIO connection, PrintReceipt printerLogic) {
 		this.station = SCS;
 		this.station.billValidator.register(this);
 		this.station.coinValidator.register(this);
@@ -126,6 +127,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.myCustomer = customer;
 		this.myAttendant = attendant;
 		this.printerLogic = printerLogic;
+		this.myConnection = connection;
 		this.coinDenominations = station.coinDenominations;
 		Collections.sort(this.coinDenominations);
 		this.maxCoinDenom = Collections.max(this.coinDenominations);
@@ -323,7 +325,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * Sets the amount that the customer wishes to pay by card. 
 	 */
 	public void setCardPaymentAmount(BigDecimal amount) {
-		this.amountToPayCard = this.getCartTotal();
+		this.amountToPayCard = amount;
 	}
 	
 	/**
@@ -349,8 +351,8 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * Simulates connecting to the bank.
 	 */
 	public boolean connectToBank(CardIssuer bank) {
-		this.activeBank = bank;
-		if(this.activeBank != null) {
+		if(myConnection.connectTo(bank)) {
+			this.activeBank = bank;
 			return true;
 		}
 		else {
@@ -482,13 +484,17 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 /* ------------------------ Pay with Credit --------------------------------------------------*/
 	// implements the pay with credit use case. trigger: customer must with to pay with credit
 	public void payCredit(CardReader reader, CardData data) {
+		if(this.amountToPayCard.compareTo(BigDecimal.valueOf(0.0)) == 0) {
+			myCustomer.removeCard(reader);
+			return;
+		}
 		// If the customer attempts to pay more than what is left, reduce the amount to be paid. This is
 		// to avoid unnecessary change dispensing.
 		if(this.amountToPayCard.compareTo(this.getCartTotal()) > 0) {
 			this.setCardPaymentAmount(this.getCartTotal());
 		}
 		int creditHoldNumber;
-		Boolean transactionCompleted = false;;
+		Boolean transactionCompleted = false;
 		if(!this.connectToBank(this.creditBank)) { // Exception 2
 			myCustomer.transactionFailure();
 			myCustomer.removeCard(reader);
@@ -533,6 +539,10 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	// This is being kept separate from payCredit despite having the same logic simply so that
 	// future edits can be made to differentiate them without ruining everything.
 	public void payDebit(CardReader reader, CardData data) {
+		if(this.amountToPayCard.compareTo(BigDecimal.valueOf(0.0)) == 0) {
+			myCustomer.removeCard(reader);
+			return;
+		}
 		// If the customer attempts to pay more than what is left, reduce the amount to be paid. This is
 		// to avoid unnecessary change dispensing.
 		if(this.amountToPayCard.compareTo(this.getCartTotal()) > 0) {
@@ -583,21 +593,14 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	}
 	
 	// Notifies the bank that the specified card should be blocked.
-	public void blockCardAtBank(CardData card) {
-		CardIssuer attemptToConnect = null;
+	public void blockCardAtBank(CardData card, CardIssuer bank) {
 		int counter = 0;
-		if(card.getType().equals("Credit")) {
-			attemptToConnect = this.creditBank;
-		}
-		else if(card.getType().equals("Debit")) {
-			attemptToConnect = this.debitBank;
-		}
 		while(counter < 10) {
-			if(!this.connectToBank(attemptToConnect)) {
+			if(!this.connectToBank(bank)) {
 				counter++;
 			}
 			else {
-				activeBank.block(card.getNumber());
+				bank.block(card.getNumber());
 				break;
 			}
 		}

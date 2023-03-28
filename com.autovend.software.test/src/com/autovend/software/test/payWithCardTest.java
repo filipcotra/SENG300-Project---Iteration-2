@@ -45,6 +45,7 @@ import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.CardReaderObserver;
 import com.autovend.external.CardIssuer;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.ConnectionIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -71,6 +72,32 @@ public class payWithCardTest {
 	boolean falseNegative = true;
 	String paymentMethodSelected;
 	Calendar calendar;
+	MyConnectionIO connection;
+	boolean connectFirstTime;
+	int connectionTries;
+	boolean neverConnect;
+	
+	class MyConnectionIO implements ConnectionIO{
+
+		@Override
+		public boolean connectTo(CardIssuer bank) {
+			connectionTries++;
+			if(connectFirstTime) {
+				if(connectionTries == 1) {
+					return true;
+				}
+				return false;
+			}
+			if(neverConnect) {
+				return false;
+			}
+			if(bank == null) {
+				return false;
+			}
+			return true;
+		}
+		
+	}
 	
 	// Set up a customerIO stub to use in test cases
 	class MyCustomerIO implements CustomerIO {
@@ -164,7 +191,7 @@ public class payWithCardTest {
 				data = selfCheckoutStation.cardReader.insert(card, pin);
 			}
 			catch(InvalidPINException e) {
-				paymentController.blockCardAtBank(data);
+				//paymentController.blockCardAtBank(data);
 			}
 			catch(BlockedCardException e) {
 				BlockedCard++;
@@ -363,8 +390,9 @@ public class payWithCardTest {
 		debitBank = new CardIssuer("Debit Bank");
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
+		connection = new MyConnectionIO();
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, connection, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
 		// Loop variable to ensure that random chip failures do not interfere with testing
 		falseNegative = true;
@@ -377,6 +405,9 @@ public class payWithCardTest {
 		creditBank.addCardData("123456", "Jeff", calendar,"456", creditLimit);
 		BigDecimal debitLimit = BigDecimal.valueOf(1000);
 		debitBank.addCardData("123456", "Jeff", calendar,"456", debitLimit);
+		connectionTries = 0;
+		connectFirstTime = false;
+		neverConnect = false;
 	}
 	
 	// Tear down after each test case
@@ -449,7 +480,6 @@ public class payWithCardTest {
 			customer.insertCard(DCard, "4321");
 		}
 		assertEquals(1, DCardComplete);
-		System.out.println(paymentController.getCartTotal());
 		assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 		assertEquals("20.0",paymentController.getAmountPaid());
 	}
@@ -514,44 +544,10 @@ public class payWithCardTest {
 	}
 	
 	/**
-	 * Test to see if a unauthorized holdNumber will cause a failed transaction. Expecting
-	 * to see this. This test is for credit exception 1.
-	 * 
-	 * @throws IOException
-	 */
-
-	
-	/**
-	 * Test to see if a unauthorized holdNumber will cause a failed transaction. Expecting
-	 * to see this. This test is for debit exception 1.
-	 * 
-	 * @throws IOException
-	 */
-
-	
-	/**
-	 * Test to see if a connection error occurs after holding, should result in the hold
-	 * being released. This is the test for credit exception 3. Should result in no 
-	 * transaction being completed, but the connection should be attempted 5 times.
-	 * 
-	 * @throws IOException
-	 */
-
-	
-	/**
-	 * Test to see if a connection error occurs after holding, should result in the hold
-	 * being released. This is the test for debit exception 3. Should result in no 
-	 * transaction being completed, but the connection should be attempted 5 times.
-	 * 
-	 * @throws IOException
-	 */
-
-	
-	/**
 	 * Testing if the customer enters in the wrong pin. If this happens 3 times, the card
 	 * should be blocked. Then, the next attempt should cause a BlockedCardException.
 	 */
-	@Test
+	@Test 
 	public void wrongPinFourTimes() {
 		customer.selectPaymentMethod("Credit", paymentController);
 		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
@@ -560,6 +556,159 @@ public class payWithCardTest {
 			customer.insertCard(CCard,  "1");
 			selfCheckoutStation.cardReader.remove();
 		}
+		assertEquals(BlockedCard,1);
+	}
+	
+	/**
+	 * Testing if the a card is blocked, payment with credit should not occur.
+	 * Expecting no payment to have occurred. This is the credit version.
+	 * 
+	 * @throws IOException 
+	 */
+	@Test 
+	public void blockedCard_PayCredit() throws IOException {
+		CardData data = null;
+		/** Getting card data from card reader with correct pin */
+		customer.selectPaymentMethod("Credit", paymentController);
+		while(falseNegative) {
+				data = selfCheckoutStation.cardReader.insert(CCard, "4321");
+		}
+		falseNegative = true;
+		paymentController.blockCardAtBank(data, creditBank);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		/** Correct pin */
+		customer.insertCard(CCard,  "4321");
+		assertEquals(failedTransaction, 1);
+		assertEquals(CCardComplete, 0);
+		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(paymentController.getAmountPaid(), "0.0");
+	}
+	
+	/**
+	 * Testing if the a card is blocked, payment with credit should not occur.
+	 * Expecting no payment to have occurred. This is the debit version.
+	 * 
+	 * @throws IOException 
+	 */
+	@Test 
+	public void blockedCard_PayDebit() throws IOException {
+		CardData data = null;
+		/** Getting card data from card reader with correct pin */
+		customer.selectPaymentMethod("Debit", paymentController);
+		while(falseNegative) {
+			data = selfCheckoutStation.cardReader.insert(DCard, "4321");
+		}
+		falseNegative = true;
+		paymentController.blockCardAtBank(data, debitBank);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		/** Correct pin */
+		customer.insertCard(DCard,  "4321");
+		assertEquals(failedTransaction, 1);
+		assertEquals(DCardComplete, 0);
+		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(paymentController.getAmountPaid(), "0.0");
+	}
+	
+	/**
+	 * Testing if the a card is blocked but a connection error occurs, it should
+	 * attempt to reconnect 10 times.
+	 * 
+	 * @throws IOException 
+	 */
+	@Test 
+	public void blockedCard_Reconnect() throws IOException {
+		neverConnect = true;
+		CardData data = null;
+		/** Getting card data from card reader with correct pin */
+		customer.selectPaymentMethod("Debit", paymentController);
+		while(falseNegative) {
+			data = selfCheckoutStation.cardReader.insert(DCard, "4321");
+		}
+		falseNegative = true;
+		paymentController.blockCardAtBank(data, debitBank);
+		assertEquals(connectionTries, 10);
+	}
+	
+	/**
+	 * Testing if the connection error occurs prior to authorization. Should just
+	 * result in a failed transaction. This is for credit.
+	 */
+	@Test 
+	public void ConnectionErrCredit_Exc2() throws IOException {
+		/** Setting banks to null so they cannot be connected to */
+		paymentController.setBanks(null,  null);
+		customer.selectPaymentMethod("Credit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		/** Correct pin */
+		customer.insertCard(CCard,  "4321");
+		assertEquals(failedTransaction, 1);
+		assertEquals(CCardComplete, 0);
+		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(paymentController.getAmountPaid(), "0.0");
+	}
+	
+	/**
+	 * Testing if the connection error occurs prior to authorization. Should just
+	 * result in a failed transaction. This is for debit.
+	 */
+	@Test 
+	public void ConnectionErrDebit_Exc2() throws IOException {
+		/** Setting banks to null so they cannot be connected to */
+		paymentController.setBanks(null,  null);
+		customer.selectPaymentMethod("Debit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		/** Correct pin */
+		customer.insertCard(DCard,  "4321");
+		assertEquals(failedTransaction, 1);
+		assertEquals(DCardComplete, 0);
+		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(paymentController.getAmountPaid(), "0.0");
+	}
+	
+	/**
+	 * Testing if the connection error occurs after authorization. This should 
+	 * cause a disconnect that eventually results in the payment not going through.
+	 * The connection should be attempted 5 times (6 when including the authorization
+	 * connection attempt). This is the debit version.
+	 */
+	@Test 
+	public void ConnectionErrDebit_Exc3() throws IOException {
+		connectFirstTime = true;
+		/** Setting banks to null so they cannot be connected to */
+		customer.selectPaymentMethod("Debit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		/** Correct pin */
+		customer.insertCard(DCard,  "4321");
+		assertEquals(DCardComplete, 0);
+		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(paymentController.getAmountPaid(), "0.0");
+		assertEquals(connectionTries, 6);
+	}
+	
+	/**
+	 * Testing if the connection error occurs after authorization. This should 
+	 * cause a disconnect that eventually results in the payment not going through.
+	 * The connection should be attempted 5 times (6 when including the authorization
+	 * connection attempt). This is the credit version.
+	 */
+	@Test 
+	public void ConnectionErrCredit_Exc3() throws IOException {
+		connectFirstTime = true;
+		/** Setting banks to null so they cannot be connected to */
+		customer.selectPaymentMethod("Credit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		paymentController.setCartTotal(BigDecimal.valueOf(20.0));
+		/** Correct pin */
+		customer.insertCard(CCard,  "4321");
+		assertEquals(CCardComplete, 0);
+		assertEquals(paymentController.getCartTotal(), BigDecimal.valueOf(20.0));
+		assertEquals(paymentController.getAmountPaid(), "0.0");
+		assertEquals(connectionTries, 6);
 	}
 	
 	/**
@@ -631,41 +780,5 @@ public class payWithCardTest {
 		assertEquals("0.0", paymentController.getAmountPaid());
 		assertEquals(BigDecimal.valueOf(20.0), paymentController.getCartTotal());
 		assertEquals(0, CCardComplete);
-	}
-	
-	/**
-	 * Testing if the customer enters in the wrong pin, but the bank connection is faulty. 
-	 * If this happens 4 times, the card should be blocked normally, but expected not to
-	 * be since the bank was attempted to be reached more than 10 times to issue the block
-	 * unsuccessfully.
-	 */
-	@Test
-	public void wrongPinFourTimesNoBankConnnection() {
-		customer.selectPaymentMethod("Credit", paymentController);
-		for(int i = 0 ; i < 4 ; i++) {
-			customer.insertCard(CCard,  "1");
-			selfCheckoutStation.cardReader.remove();
-		}
-		assertEquals(0, this.BlockedCard);
-	}
-	
-	/**
-	 * Test to see if a connection error occurs after holding, should result in the hold
-	 * being released. This is the test for debit exception 3. Should result in no 
-	 * transaction being completed, but the connection should be attempted 5 times.
-	 * 
-	 * @throws IOException
-	 */
-	//@Test
-	public void wrongPinFourTimesBankConnnectionRestoredMidwayThrough() throws IOException {		
-		customer.selectPaymentMethod("Credit", paymentController);
-		// Attempt incorrect pin until it will become blocked
-		for(int i = 0 ; i < 4 ; i++) {
-			customer.insertCard(CCard,  "1");
-			selfCheckoutStation.cardReader.remove();
-		}
-		// Check that the card did become blocked, and that the bank was contacted 6 times before the connection
-		// was successful in order to issue the block
-		assertEquals(1, this.BlockedCard);
 	}
 }

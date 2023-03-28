@@ -48,13 +48,14 @@ import com.autovend.devices.SimulationException;
 import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
+import com.autovend.external.CardIssuer;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
 
 import com.autovend.software.BaggingAreaController;
-
+import com.autovend.software.ConnectionIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -107,8 +108,19 @@ public class AllTogether {
 	BarcodedProduct testProduct2;
 	BarcodedProduct testProduct3;
 	BarcodedProduct testProduct4;
+	MyConnectionIO connection;
 	
-class MyCustomerIO implements CustomerIO {
+	class MyConnectionIO implements ConnectionIO{
+
+		@Override
+		public boolean connectTo(CardIssuer bank) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+		
+	}
+	
+	class MyCustomerIO implements CustomerIO {
 
 	@Override
 	public void scanItem(BarcodedUnit item) {
@@ -329,6 +341,7 @@ class MyCustomerIO implements CustomerIO {
 						new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 				customer = new MyCustomerIO();
 				attendant = new MyAttendantIO();
+				connection = new MyConnectionIO();
 				ejectedBills = new ArrayList<Integer>();		
 				/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
 				 * Every dispenser has a max capacity of 100 
@@ -387,7 +400,7 @@ class MyCustomerIO implements CustomerIO {
 				
 				// Create and attach controllers to the station:
 				this.receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, connection, receiptPrinterController);
 				this.baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
 				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController, baggingAreaController);
 				receiptPrinterController.setContents(1024, 1024);

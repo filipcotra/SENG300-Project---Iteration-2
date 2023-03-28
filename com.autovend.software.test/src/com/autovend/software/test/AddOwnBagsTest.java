@@ -30,6 +30,7 @@ import com.autovend.BarcodedUnit;
 import com.autovend.Card;
 import com.autovend.Card.CardData;
 import com.autovend.devices.*;
+import com.autovend.external.CardIssuer;
 
 public class AddOwnBagsTest {
 	SelfCheckoutStation station;
@@ -40,7 +41,17 @@ public class AddOwnBagsTest {
 	BaggingAreaController bag;
 	boolean wasCustomerIndicatedToUseOwnBags = false;
 	boolean wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags = false;
-	
+	MyConnectionIO connection;
+
+	class MyConnectionIO implements ConnectionIO{
+
+		@Override
+		public boolean connectTo(CardIssuer bank) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+		
+	}
 	
 	class myAttendantIO implements AttendantIO{
 		
@@ -242,8 +253,9 @@ public void setup() {
 			new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 	attendantIO = new myAttendantIO();
 	customer = new myCustomerIO();
+	connection = new MyConnectionIO();
 	pr = new PrintReceipt(station, station.printer, customer, attendantIO);
-	paymentController = new PaymentControllerLogic(station, customer, attendantIO, pr);
+	paymentController = new PaymentControllerLogic(station, customer, attendantIO, connection, pr);
 	bag = new BaggingAreaController(station, customer, attendantIO, paymentController);
 }
 
