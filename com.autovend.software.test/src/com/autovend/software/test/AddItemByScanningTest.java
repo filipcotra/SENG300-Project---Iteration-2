@@ -29,15 +29,22 @@ import org.junit.Test;
 
 import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
+import com.autovend.Card;
 import com.autovend.Numeral;
+import com.autovend.Card.CardData;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
+
+import com.autovend.software.BankIO;
+
 import com.autovend.software.BaggingAreaController;
+
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -55,6 +62,7 @@ public class AddItemByScanningTest {
 	BarcodedProduct testProduct;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
+	MyBankIO bank;
 	Barcode barcode;
 	BarcodedUnit scannedItem;
 	BarcodedUnit placedItem;
@@ -177,6 +185,48 @@ public class AddItemByScanningTest {
 			
 		}
 
+		@Override
+		public void removeCoin(CoinTray tray) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void payWithCreditComplete(BigDecimal amountDue) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void payWithDebitComplete(BigDecimal amountDue) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void transactionFailure() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void setCardPaymentAmount(BigDecimal amount) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void insertCard(Card card, String pin) {
+			// TODO Auto-generated method stub
+			
+		}
+
 
 		
 	}
@@ -230,6 +280,45 @@ public class AddItemByScanningTest {
 		}
 
 	}
+	
+	class MyBankIO implements BankIO {
+
+		@Override
+		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public void completeTransaction(int holdNumber) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void releaseHold(CardData data) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void blockCard(Card card) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean connectionStatus() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+	}
 	/**
 	 * An example setup that runs a normal execution of the use case
 	 * You can delete this method later
@@ -253,9 +342,10 @@ public class AddItemByScanningTest {
 		ProductDatabases.BARCODED_PRODUCT_DATABASE.put(barcode, testProduct);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
+		bank = new MyBankIO();
 		
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
 		
 		baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
 		

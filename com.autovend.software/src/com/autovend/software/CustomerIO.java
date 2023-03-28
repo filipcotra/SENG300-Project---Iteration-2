@@ -18,14 +18,15 @@ package com.autovend.software;
 import java.math.BigDecimal;
 
 import com.autovend.BarcodedUnit;
+import com.autovend.Card;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 
 /**
  * This interface can be used in testing to simulate customer interactions in certain use cases.
  *
  */
 public interface CustomerIO {
-		
 	/**
 	 * Simulates a customer scanning an item.
 	 * This interaction is on Step 1 of add item by scanning.
@@ -77,6 +78,45 @@ public interface CustomerIO {
 	 */
 	public void removeBill(BillSlot slot);
 
+
+	/*
+	 * Simulates the customer removing the coin from the tray
+	 */
+	public void removeCoin(CoinTray tray);
+	
+	
+	/*
+	 * Signals to Customer I/O that the operation is complete and the remaining 
+	 * amount due is reduced.
+	 */
+	public void payWithCreditComplete(BigDecimal amountDue);
+	
+	/*
+	 * Signals to Customer I/O that the operation is complete and the remaining 
+	 * amount due is reduced.
+	 */
+	public void payWithDebitComplete(BigDecimal amountDue);
+	
+	/*
+	 * Simualates the customer selecting a payment method, to enable required devices
+	 */
+	public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance);
+	
+	/*
+	 *signals that the transaction failed 
+	 */
+	public void transactionFailure();
+
+	/* 
+	 * Simulates the customer entering the amount they wish to pay by card
+	 */
+	public void setCardPaymentAmount(BigDecimal amount);
+
+	/*
+	 * Simulates the customer inserting a card.
+	 */
+	public void insertCard(Card card, String pin);
+=======
 	/**
 	 * A signal from the Customer IO to the station, notifying the station that the Customer wants
 	 * to purchase re-usable bags.
@@ -127,4 +167,5 @@ public interface CustomerIO {
 	 * Simulates the customer being indicated/notified to contine after an attendant either approved or denied them from adding bags to bagging area
 	 */
 	public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags();
+
 }

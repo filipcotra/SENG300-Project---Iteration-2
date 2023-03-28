@@ -23,11 +23,14 @@ import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.Card;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.OverloadException;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.CustomerIO;
+import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
 import com.autovend.software.test.PaymentWithCashTest.MyBillSlotObserver;
 import com.autovend.devices.DisabledException;
@@ -88,6 +91,11 @@ public class ReceiptPrinterTest {
 				// TODO Auto-generated method stub
 				
 			}
+
+
+			@Override
+			public void removeCoin(CoinTray tray) {
+
 			
 			@Override
 			public boolean selectAddOwnBags() {
@@ -102,41 +110,64 @@ public class ReceiptPrinterTest {
 
 			@Override
 			public void notifyWeightDiscrepancyCustomerIO() {
+
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
+
+			public void payWithCreditComplete(BigDecimal amountDue) {
+
 			public void notifyWeightDiscrepancyApprovedCustomerIO() {
+
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
+			public void payWithDebitComplete(BigDecimal amountDue) {
+      
 			public void signalPurchaseBags(int quantity) {
+
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
+
+			public void transactionFailure() {
+
 			public void signalFinishedPurchasingBags() {
+
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
+
+			public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+
 			public void signalReadyForInteraction() {
+
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
+
+			public void setCardPaymentAmount(BigDecimal amount) {
+
 			public void signalPutPurchasedBagsOnBaggingArea() {
+
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
+
+			public void insertCard(Card card, String pin) {
+
 			public String getMembershipNumber() {
 				// TODO Auto-generated method stub
 				return null;
@@ -150,6 +181,7 @@ public class ReceiptPrinterTest {
 
 			@Override
 			public void notifyBadMembershipNumberCustomerIO() {
+
 				// TODO Auto-generated method stub
 				
 			}
