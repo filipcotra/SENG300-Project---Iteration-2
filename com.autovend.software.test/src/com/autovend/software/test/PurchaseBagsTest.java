@@ -27,10 +27,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
+import com.autovend.Card;
+import com.autovend.Card.CardData;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.BaggingAreaController;
+import com.autovend.software.BankIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -43,6 +47,7 @@ public class PurchaseBagsTest {
 	SelfCheckoutStation station;
 	MyAttendantIO attendantIO;
 	MyCustomerIO customerIO;
+	MyBankIO bankIO;
 	BaggingAreaController baggingAreaController;
 	PaymentControllerLogic paymentController;
 	PrintReceipt printerController;
@@ -52,8 +57,9 @@ public class PurchaseBagsTest {
 		this.station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {10,20}, new BigDecimal[] {BigDecimal.ONE}, 999, 1);
 		this.attendantIO = new MyAttendantIO();
 		this.customerIO = new MyCustomerIO();
+		this.bankIO = new MyBankIO();
 		this.printerController = new PrintReceipt(station, station.printer, customerIO, attendantIO);
-		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, printerController);
+		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, bankIO, printerController);
 		this.baggingAreaController = new BaggingAreaController(station, customerIO, attendantIO, paymentController);
 	}
 	
@@ -265,11 +271,6 @@ public class PurchaseBagsTest {
 			// TODO Auto-generated method stub
 		}
 		
-		public void removeCoin(CoinTray tray) {
-			// TODO Auto-generated method stub
-		}
-		
-		
 		public void payWithCreditComplete(BigDecimal amountDue) {
 			// TODO Auto-generated method stub
 		}
@@ -292,6 +293,12 @@ public class PurchaseBagsTest {
 		
 		public void insertCard(Card card, String pin) {
 			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public void removeCoin(CoinTray tray) {
+			// TODO Auto-generated method stub
+			
 		}
 		
 	}
@@ -343,6 +350,49 @@ public class PurchaseBagsTest {
 		@Override
 		public void acknowledgeLowPaper() {
 			// TODO Auto-generated method stub
+		}
+		
+	}
+	
+class MyBankIO implements BankIO{
+		
+		// hold number passed to and from bank before releasing funds on authorized transactions
+		public int holdNumber;
+
+		@Override
+		public void completeTransaction(int holdNumber) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		// Track if card is to be blocked
+		@Override
+		public void blockCard(Card card) {
+		}
+
+		// Set test hold number to indicate that there is a hold for credit payment
+		@Override
+		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+			return this.holdNumber = 1;
+		}
+
+		// Set test hold number to indicate that there is a hold for debit payment
+		@Override
+		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+			return this.holdNumber = 1;
+		}
+
+		// Set test hold number to indicate that the hold has been released
+		@Override
+		public void releaseHold(CardData data) {
+			this.holdNumber = 0;
+			
+		}
+
+		// Confirm if the connection to the bank has been successfully made
+		@Override
+		public boolean connectionStatus() {
+			return true;
 		}
 		
 	}

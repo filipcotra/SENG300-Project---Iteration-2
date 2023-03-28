@@ -26,7 +26,9 @@ import java.util.Scanner;
 import org.junit.*;
 
 import com.autovend.BarcodedUnit;
+import com.autovend.Card;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.CustomerIO;

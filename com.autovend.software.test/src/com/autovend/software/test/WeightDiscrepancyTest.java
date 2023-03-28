@@ -28,14 +28,18 @@ import org.junit.Test;
 
 import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
+import com.autovend.Card;
 import com.autovend.Numeral;
 import com.autovend.SellableUnit;
+import com.autovend.Card.CardData;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.BaggingAreaController;
+import com.autovend.software.BankIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -48,6 +52,7 @@ public class WeightDiscrepancyTest {
 	SelfCheckoutStation station;
 	MyAttendantIO attendantIO;
 	MyCustomerIO customerIO;
+	MyBankIO bankIO;
 	PaymentControllerLogic paymentController;
 	PrintReceipt printerController;
 	BaggingAreaController baggingAreaController;
@@ -66,8 +71,9 @@ public class WeightDiscrepancyTest {
 		this.station = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {10,20}, new BigDecimal[] {BigDecimal.ONE}, scaleMaximumWeight, scaleSensitivity);
 		this.attendantIO = new MyAttendantIO();
 		this.customerIO = new MyCustomerIO();
+		this.bankIO = new MyBankIO();
 		this.printerController = new PrintReceipt(station, station.printer, customerIO, attendantIO);
-		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, printerController);
+		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, bankIO, printerController);
 		this.baggingAreaController = new BaggingAreaController(station, customerIO, attendantIO, paymentController);
 		marsBarBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
 		mbPrice = new BigDecimal(1.25);
@@ -322,6 +328,49 @@ public class WeightDiscrepancyTest {
 		@Override
 		public void acknowledgeLowPaper() {
 			// TODO Auto-generated method stub
+		}
+		
+	}
+	
+class MyBankIO implements BankIO{
+		
+		// hold number passed to and from bank before releasing funds on authorized transactions
+		public int holdNumber;
+
+		@Override
+		public void completeTransaction(int holdNumber) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		// Track if card is to be blocked
+		@Override
+		public void blockCard(Card card) {
+		}
+
+		// Set test hold number to indicate that there is a hold for credit payment
+		@Override
+		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+			return this.holdNumber = 1;
+		}
+
+		// Set test hold number to indicate that there is a hold for debit payment
+		@Override
+		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+			return this.holdNumber = 1;
+		}
+
+		// Set test hold number to indicate that the hold has been released
+		@Override
+		public void releaseHold(CardData data) {
+			this.holdNumber = 0;
+			
+		}
+
+		// Confirm if the connection to the bank has been successfully made
+		@Override
+		public boolean connectionStatus() {
+			return true;
 		}
 		
 	}
