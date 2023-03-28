@@ -128,6 +128,7 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	 * @param amountPaid The amount that the customer paid
 	 */
 	public void print(ArrayList<String> items, ArrayList<String> prices, String change, String amountPaid) {
+		this.totalVal = 0;
 		try {
 
 			// Loops through and prints the item, its price, and the total amount it adds up
