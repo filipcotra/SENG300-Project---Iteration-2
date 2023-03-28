@@ -84,6 +84,17 @@ public class AddOwnBagsTest {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public void acknowledgeLowInk() {
+		// TODO Auto-generated method stub
+	}
+
+	
+	@Override
+	public void acknowledgeLowPaper() {
+		// TODO Auto-generated method stub
+	}
 	}
 	
 	class myCustomerIO implements CustomerIO{
@@ -187,6 +198,34 @@ public class AddOwnBagsTest {
 			wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags = true;
 		}
 		
+		public void removeCoin(CoinTray tray) {
+			// TODO Auto-generated method stub
+		}
+		
+		
+		public void payWithCreditComplete(BigDecimal amountDue) {
+			// TODO Auto-generated method stub
+		}
+		
+		public void payWithDebitComplete(BigDecimal amountDue) {
+			// TODO Auto-generated method stub
+		}
+		
+		public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+			// TODO Auto-generated method stub
+		}
+		
+		public void transactionFailure() {
+			// TODO Auto-generated method stub
+		}
+		
+		public void setCardPaymentAmount(BigDecimal amount) {
+			// TODO Auto-generated method stub
+		}
+		
+		public void insertCard(Card card, String pin) {
+			// TODO Auto-generated method stub
+		}
 	}
 
 

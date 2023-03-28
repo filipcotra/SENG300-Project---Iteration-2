@@ -278,6 +278,17 @@ public class AddItemByScanningTest {
 			// TODO Auto-generated method stub
 
 		}
+		
+		@Override
+		public void acknowledgeLowInk() {
+			// TODO Auto-generated method stub
+		}
+
+		
+		@Override
+		public void acknowledgeLowPaper() {
+			// TODO Auto-generated method stub
+		}
 
 	}
 	
