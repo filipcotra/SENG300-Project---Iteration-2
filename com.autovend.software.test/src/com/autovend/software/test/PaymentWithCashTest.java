@@ -247,6 +247,7 @@ public class PaymentWithCashTest {
 			}
 
 			@Override
+
 			public void notifyWeightDiscrepancyAttendantIO() {
 				// TODO Auto-generated method stub
 				
@@ -268,6 +269,15 @@ public class PaymentWithCashTest {
 			public void acceptOwnBags() {
 				// TODO Auto-generated method stub
 				
+
+			public void acknowledgeLowInk() {
+				// TODO Auto-generated method stub
+			}
+
+			@Override
+			public void acknowledgeLowPaper() {
+				// TODO Auto-generated method stub
+
 			}
 	}
 	

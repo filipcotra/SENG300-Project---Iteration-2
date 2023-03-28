@@ -51,6 +51,8 @@ public interface AttendantIO {
 	 * attendant will also be informed that the station needs maintenance.
 	 */
 	public void printDuplicateReceipt();
+  
+
 	
 	/**
 	 * Simulates the attendant checking the bags the customer wants to add
@@ -61,4 +63,20 @@ public interface AttendantIO {
 	 * Simulates the attendant accepting or rejecting the customer's own bags
 	 */
 	public void acceptOwnBags();
+
+
+	/*
+	 * Simulates informing the attendant that the printer is low on ink
+	 * This occurs after printing is completed.
+	 * The system is then suspended and the attendant will refill the ink
+	 */
+	public void acknowledgeLowInk();
+
+	/*
+	 * Simulates informing the attendant that the printer is low on paper
+	 * This occurs after printing is completed.
+	 * The system is then suspended and the attendant will refill the paper
+	 */
+	public void acknowledgeLowPaper();
+
 }

@@ -12,6 +12,7 @@ package com.autovend.software;
 import java.util.ArrayList;
 
 import com.autovend.devices.AbstractDevice;
+import com.autovend.devices.OverloadException;
 import com.autovend.devices.ReceiptPrinter;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.devices.observers.AbstractDeviceObserver;
@@ -35,6 +36,12 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	char[] paidChars = { 'P', 'a', 'i', 'd', ':', ' ', '$' };
 	char[] changeChars = { 'C', 'h', 'a', 'n', 'g', 'e', ':', ' ', '$' };
 	char[] priceSpace = { ' ', ' ', ' ', ' ', ' ', ' ', '$' };
+	int initialInk;
+	int initialPaper;
+	public int inkRemaining;
+	public int paperRemaining;
+	boolean lowPaper = false;
+	boolean lowInk = false;
 
 	/**
 	 * Initialize a printer for the Print Receipt use case. Also registers this
@@ -87,6 +94,21 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		this.station.billStorage.disable();
 		this.station.billValidator.disable();
 	}
+
+	/**
+	 * Method to unsuspend all the hardware components of the self checkout system
+	 */
+	public void unSuspendSystem() {
+		this.station.printer.enable();
+		this.station.baggingArea.enable();
+		this.station.mainScanner.enable();
+		this.station.handheldScanner.enable();
+		this.station.billInput.enable();
+		this.station.billOutput.enable();
+		this.station.billStorage.enable();
+		this.station.billValidator.enable();
+	}
+
 
 	/**
 	 * The method that prints out the receipt for the customer. Starts by printing
@@ -185,6 +207,11 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 			// Step 4: Once the receipt is printed, signals to Customer I/O that session is
 			// complete.
 			this.customer.thankCustomer();
+			if (lowPaper || lowInk){
+				suspendSystem();
+				refillPaper();
+				refillInk();
+			}
 		}
 		// Catch any exceptions
 		catch (Exception e) {
@@ -195,11 +222,19 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 	/**
 	 * Method for calling print specifically, connecting software to hardware.
 	 * Checks the ink and paper flags before printing.
+	 * @param ch the character to be printed
 	 */
 	public void callPrint(char ch) throws Exception {
 		if (!(this.flagPaper == false || this.flagInk == false)) {
 			try {
 				this.printer.print(ch);
+				if (ch == '\n'){
+					paperRemaining -=1;
+				} else if (!Character.isWhitespace(ch)) {
+					inkRemaining -=1;
+				}
+				lowPaper();
+				lowInk();
 			} catch (Exception e) {
 				throw e;
 			}
@@ -209,7 +244,78 @@ public class PrintReceipt implements ReceiptPrinterObserver {
 		}
 	}
 
+
+	/**
+	 * Method to store the amount of ink and paper initially in the printer so the software can estimate when ink/paper is low
+	 * also initializes variables to store how much ink/paper is remaining
+	 * 
+	 * @param ink the amount of ink added to the printer
+	 * @param paper the amount of paper added to the printer
+	 */
+	public void setContents(int ink, int paper){
+		this.initialInk += ink;
+		this.initialPaper += paper;
+		this.inkRemaining += ink;
+		this.paperRemaining += paper;
+	}
+
+	/**
+	 * This method calculates if the amount of paper in the printer is low and sets an appropriate flag
+	 */
+	public void lowPaper(){
+		if (paperRemaining <= initialPaper*.25){
+			this.lowPaper = true;
+		}
+	}
+
+	/**
+	 * This method calculates if the amount of ink in the printer is low and sets an appropriate flag
+	 */
+	public void lowInk(){
+		if (inkRemaining <= initialInk*.25){
+			this.lowInk = true;
+		}
+	}
 	
+	/**
+	 * Method used to refillInk once lowInk is detected, calls the attendant to refill the ink and unsuspends the system
+	 */
+	public void refillInk(){
+		if(this.lowInk == true) {
+			this.attendant.acknowledgeLowInk();
+			unSuspendSystem();
+			this.lowInk = false;
+		}
+	}
+	
+	/**
+	 * Method used to refillInk once lowPaper is detected, calls the attendant to refill the paper and unsuspends the system
+	 */
+	public void refillPaper(){
+		if(this.lowPaper == true) {
+			this.attendant.acknowledgeLowPaper();
+			unSuspendSystem();
+			this.lowPaper = false;
+		}
+	}
+	
+	/**
+	 * A getter to return this.lowInk to check if lowInk() is called
+	 * @return this.lowInk
+	 */
+	public boolean getLowInk(){
+		return this.lowInk;
+	}
+	
+	/**
+	 * A getter to return this.lowPaper to check if lowPaper() is called
+	 * @return this.lowPaper
+	 */
+	public boolean getLowPaper(){
+		return this.lowPaper;
+	}
+
+
 	// Implement methods from the ReceiptPrinterObserver interface
 
 	/**
