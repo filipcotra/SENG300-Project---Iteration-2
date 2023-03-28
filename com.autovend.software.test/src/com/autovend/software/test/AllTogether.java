@@ -41,6 +41,7 @@ import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.BaggingAreaController;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -54,6 +55,7 @@ public class AllTogether {
 	AddItemByScanningController addItemByScanningController;
 	PaymentControllerLogic paymentController;
 	PrintReceipt receiptPrinterController;
+	BaggingAreaController baggingAreaController;
 	SelfCheckoutStation selfCheckoutStation;
 	MyBillSlotObserver billObserver;
 	MyCustomerIO customer;
@@ -311,7 +313,8 @@ class MyCustomerIO implements CustomerIO {
 				// Create and attach controllers to the station:
 				this.receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
-				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController);
+				this.baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
+				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController, baggingAreaController);
 	}
 	/* 
 	 * Test Case: The customer scans two items. 

@@ -98,8 +98,8 @@ public class WeightDiscrepancyTest {
 		attendantIO.approveWeightDiscrepancy(customerIO);
 		assertFalse(customerIO.customerWeightDiscrepancySignal);
 		assertFalse(attendantIO.attendantWeightDiscrepancySignal);
-		assertEquals(mbWeighted, baggingAreaController.expectedWeight);
-		assertEquals(mbWeighted, baggingAreaController.actualWeight);
+		assertEquals(mbWeighted.getWeight(), baggingAreaController.expectedWeight, 0.001d);
+		assertEquals(mbWeighted.getWeight(), baggingAreaController.actualWeight, 0.001d);
 	}
 	
 	@Test

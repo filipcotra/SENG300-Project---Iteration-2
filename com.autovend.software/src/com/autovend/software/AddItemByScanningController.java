@@ -32,10 +32,9 @@ public class AddItemByScanningController implements BarcodeScannerObserver {
 	SelfCheckoutStation station;
 	CustomerIO customerIO;
 	AttendantIO attendantIO;
-	double expectedWeight; // The expected weight of the self checkout station when an item is scanned
-	double actualWeight; // The actual weight of the self checkout station when an item is scanned
 	BarcodedUnit scannedItem; // The current scanned item to be added to the bagging area
 	PaymentControllerLogic paymentController;
+	BaggingAreaController baggingAreaController;
 
 	/**
 	 * Initialize a controller for the Add Item by Scanning use case. 
@@ -44,12 +43,13 @@ public class AddItemByScanningController implements BarcodeScannerObserver {
 	 * @param customerIO The customer interacting with the Add Item by Scanning use case.
 	 * @param attendantIO The attendant interacting with the Add Item by Scanning use case.
 	 */
-	public AddItemByScanningController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
+	public AddItemByScanningController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController, BaggingAreaController baggingAreaController) {
 		this.station = station;
 		this.customerIO = customerIO;
 		this.attendantIO = attendantIO;
 		this.paymentController = paymentController;
 		this.station.mainScanner.register(this);
+		this.baggingAreaController = baggingAreaController;
 	}
 	
 	/**
@@ -92,20 +92,6 @@ public class AddItemByScanningController implements BarcodeScannerObserver {
 	public BarcodedProduct getProduct() {
 		return this.product;
 	}
-	
-	/**
-	 * Getter for expectedWeight. Returns expectedWeight.
-	 */
-	public double getExpectedWeight() {
-		return this.expectedWeight;
-	}
-	
-	/**
-	 * Getter for actualWeight. Returns expectedWeight.
-	 */
-	public double getActualWeight() {
-		return this.actualWeight;
-	}
 
 
 	/**
@@ -113,7 +99,6 @@ public class AddItemByScanningController implements BarcodeScannerObserver {
 	 */
 	@Override
 	public void reactToBarcodeScannedEvent(BarcodeScanner barcodeScanner, Barcode barcode) {
-		
 		
 		// Block the self checkout station by disabling all abstract devices other than the bagging area. (Step 2)
 		this.blockSystem();
@@ -129,14 +114,10 @@ public class AddItemByScanningController implements BarcodeScannerObserver {
 		
 		// Calculating the expected weight of the bagging area (Step 4)
 		double weight = product.getExpectedWeight();
-		try {
-			if (weight > station.baggingArea.getSensitivity()) {	// check if the expected weight to be added to bagging area would be detected by scale
-				this.expectedWeight = this.station.baggingArea.getCurrentWeight() + weight; // if expected weight to be added is greater than sensitivity, update expectedWeight of scale
-			} else { 	// if weight to be added won't be detected, unblock system
-				this.unblockSystem();
-			}
-		} catch (OverloadException e) {
-			e.printStackTrace();
+		if (weight > station.baggingArea.getSensitivity()) {	// check if the expected weight to be added to bagging area would be detected by scale
+			baggingAreaController.expectedWeight += weight; // if expected weight to be added is greater than sensitivity, update expectedWeight of scale
+		} else { 	// if weight to be added won't be detected, unblock system
+			this.unblockSystem();
 		}
 		
 		// Notify Customer I/O to place scanned item in bagging area (Step 5) 

@@ -30,6 +30,7 @@ import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.BaggingAreaController;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -42,6 +43,7 @@ public class AddItemByScanningTest {
 	PrintReceipt receiptPrinterController;
 	AddItemByScanningController addItemByScanningController;
 	PaymentControllerLogic paymentController;
+	BaggingAreaController baggingAreaController;
 	SelfCheckoutStation selfCheckoutStation;
 	BarcodedProduct testProduct;
 	MyCustomerIO customer;
@@ -239,8 +241,10 @@ public class AddItemByScanningTest {
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
 		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
 		
+		baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
+		
 		addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, 
-				attendant, paymentController);
+				attendant, paymentController, baggingAreaController);
 		approveFlag = true;
 	}
 	
@@ -290,9 +294,9 @@ public class AddItemByScanningTest {
 		/**
 		 * Step 4: System: Updates the expected weight from the Bagging Area
 		 */
-		assertEquals(0, addItemByScanningController.getExpectedWeight(), 0.00);
+		assertEquals(0, baggingAreaController.getExpectedWeight(), 0.00);
 		customer.scanItem(scannedItem);
-		assertEquals(12.0, addItemByScanningController.getExpectedWeight(), 0.00);
+		assertEquals(12.0, baggingAreaController.getExpectedWeight(), 0.00);
 	}
 	
 	@Test
@@ -319,10 +323,10 @@ public class AddItemByScanningTest {
 		/**
 		 * Step 6: Bagging Area: Signals to the System that the weight has changed.
 		 */
-		assertEquals(0, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(0, baggingAreaController.getActualWeight(), 0.00);
 		customer.scanItem(scannedItem);
 		customer.placeScannedItemInBaggingArea(placedItem);
-		assertEquals(12, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(12, baggingAreaController.getActualWeight(), 0.00);
 	}
 	
 	@Test
@@ -331,10 +335,10 @@ public class AddItemByScanningTest {
 		 * Step 6: Bagging Area: Signals to the System that the weight has changed.
 		 */
 		placedItem = new BarcodedUnit(barcode, 15);
-		assertEquals(0, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(0, baggingAreaController.getActualWeight(), 0.00);
 		customer.scanItem(scannedItem);
 		customer.placeScannedItemInBaggingArea(placedItem);
-		assertEquals(15, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(15, baggingAreaController.getActualWeight(), 0.00);
 	}
 	
 	
