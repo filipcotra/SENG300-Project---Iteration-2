@@ -1,14 +1,22 @@
-/** 
- * Filip Cotra - 30086750
- * Khondaker Samin Rashid - 30143490
- * Nishan Soni - 30147280
- * Aaron Tigley - 30159927
- * Zainab Bari - 30154224
- */
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
 
 package com.autovend.software.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 /*
  * Open issues:
@@ -29,13 +37,22 @@ import java.util.ArrayList;
 import java.util.Currency;
 
 import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.Card;
+import com.autovend.Card.CardData;
+import com.autovend.Coin;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.BillValidator;
+import com.autovend.devices.CoinDispenser;
+import com.autovend.devices.CoinSlot;
+import com.autovend.devices.CoinTray;
+import com.autovend.devices.CoinValidator;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.OverloadException;
 import com.autovend.devices.SelfCheckoutStation;
@@ -43,19 +60,29 @@ import com.autovend.devices.SimulationException;
 import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
+import com.autovend.devices.observers.BillValidatorObserver;
+import com.autovend.devices.observers.CoinDispenserObserver;
+import com.autovend.devices.observers.CoinSlotObserver;
+import com.autovend.devices.observers.CoinTrayObserver;
+import com.autovend.devices.observers.CoinValidatorObserver;
 import com.autovend.software.AttendantIO;
+import com.autovend.software.BankIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
 
 public class PaymentWithCashTest {
-
+	
+	// Create variables to be used
 	PaymentControllerLogic paymentController;
 	PrintReceipt receiptPrinterController;
 	SelfCheckoutStation selfCheckoutStation;
 	MyBillSlotObserver billObserver;
+	MyCoinSlotObserver coinSlotObserver;
+	MyCoinTrayObserver coinTrayObserver;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
+	BankIO bank;
 	Bill[] fiveDollarBills;
 	Bill[] tenDollarBills;
 	Bill[] twentyDollarBills;
@@ -67,13 +94,31 @@ public class PaymentWithCashTest {
 	Bill billFifty;
 	Bill billHundred;
 	ArrayList<Integer> ejectedBills; 
-	DispenserStub billObserverStub;
+	BillDispenserStub billObserverStub;
+	Coin[] nickelCoins;
+	Coin[] dimeCoins;
+	Coin[] quarterCoins;
+	Coin[] loonieCoins;
+	Coin[] toonieCoins;
+	CoinSlot coinSlot;
+	Coin coinPenny;
+	Coin coinNickel;
+	Coin coinDime;
+	Coin coinQuarter;
+	Coin coinLoonie;
+	Coin coinToonie;
+	ArrayList<BigDecimal> ejectedCoins;
+	CoinDispenserStub coinObserverStub;
 	final PrintStream originalOut = System.out;
 	ByteArrayOutputStream baos;
 	PrintStream ps;
 	Boolean attendantSignalled;
+	Boolean coinFalseNegative;
+	Boolean billFalseNegative;
+
+/* ---------------------------------- Stubs ---------------------------------------------------*/
 	
-	class DispenserStub implements BillDispenserObserver {
+	class BillDispenserStub implements BillDispenserObserver {
 
 		@Override
 		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
@@ -93,10 +138,15 @@ public class PaymentWithCashTest {
 			
 		}
 
+		// Check which bills were ejected
 		@Override
 		public void reactToBillsEmptyEvent(BillDispenser dispenser) {
-			// TODO Auto-generated method stub
-			
+			int billValue = 0;
+			for(int denom : selfCheckoutStation.billDenominations) {
+				if(selfCheckoutStation.billDispensers.get(denom).equals(dispenser)) {
+					ejectedBills.add(denom);
+				}
+			}	
 		}
 
 		@Override
@@ -107,7 +157,7 @@ public class PaymentWithCashTest {
 
 		@Override
 		public void reactToBillRemovedEvent(BillDispenser dispenser, Bill bill) {
-			ejectedBills.add(bill.getValue());		
+			ejectedBills.add(bill.getValue());	
 			
 		}
 
@@ -125,6 +175,112 @@ public class PaymentWithCashTest {
 		
 	}
 	
+	class CoinDispenserStub implements CoinDispenserObserver{
+
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinsFullEvent(CoinDispenser dispenser) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinsEmptyEvent(CoinDispenser dispenser) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinAddedEvent(CoinDispenser dispenser, Coin coin) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinRemovedEvent(CoinDispenser dispenser, Coin coin) {
+			ejectedCoins.add(coin.getValue());
+			
+		}
+
+		@Override
+		public void reactToCoinsLoadedEvent(CoinDispenser dispenser, Coin... coins) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToCoinsUnloadedEvent(CoinDispenser dispenser, Coin... coins) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
+	class CoinValidatorStub implements CoinValidatorObserver{
+
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToValidCoinDetectedEvent(CoinValidator validator, BigDecimal value) {
+			coinFalseNegative = false;
+			
+		}
+
+		@Override
+		public void reactToInvalidCoinDetectedEvent(CoinValidator validator) {
+			coinFalseNegative = true;
+			
+		}
+	}
+	
+	class BillValidatorStub implements BillValidatorObserver{
+
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void reactToValidBillDetectedEvent(BillValidator validator, Currency currency, int value) {
+			billFalseNegative = false;
+			
+		}
+
+		@Override
+		public void reactToInvalidBillDetectedEvent(BillValidator validator) {
+			billFalseNegative = true;
+			
+		}
+
+	}
 	
 	class MyCustomerIO implements CustomerIO {
 
@@ -134,6 +290,7 @@ public class PaymentWithCashTest {
 			
 		}
 		
+		// Allow customer to remove bill from slot
 		@Override
 		public void removeBill(BillSlot slot) {
 			slot.removeDanglingBill();
@@ -162,16 +319,127 @@ public class PaymentWithCashTest {
 			// TODO Auto-generated method stub
 			
 		}
+
+
+		// Allow customer to remove coins from tray
+		@Override
+		public void removeCoin(CoinTray tray) {
+			tray.collectCoins();
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPurchaseBags(int quantity) {
+			// TODO Auto-generated method stub
+
+			
+		}
+
+		@Override
+
+		public void payWithCreditComplete(BigDecimal amountDue) {
+			
+		}
+
+		public void signalFinishedPurchasingBags() {
+
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+
+		public void payWithDebitComplete(BigDecimal amountDue) {
+			
+		}
+
+		public void signalReadyForInteraction() {
+
+			// TODO Auto-generated method stub
+			
+		}
+
+
+		// Allow customer to choose their choice of payment method, enabling the required
+		// hardware components depending on the selected method
+		@Override
+		public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+			if (paymentMethod.equals("Cash")) {
+				instance.enableCashPayment();
+			}
+			else if(paymentMethod.equals("Credit") || paymentMethod.equals("Debit")) {
+				instance.enableCardPayment(paymentMethod);
+			}
+			
+		}
+		
+		@Override
+		public void setCardPaymentAmount(BigDecimal amount) {
+			paymentController.setCardPaymentAmount(amount);
+		}
+
+		@Override
+		public void transactionFailure() {
+			
+		}
+
+		@Override
+		public void signalPutPurchasedBagsOnBaggingArea() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public String getMembershipNumber() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean cancelMembershipInput() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void notifyBadMembershipNumberCustomerIO() {
+
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+
+		public void insertCard(Card card, String pin) {
+			
+		}
+
+		public boolean selectAddOwnBags() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+
+			// TODO Auto-generated method stub
+			
+		}
 	
 	}
 	
 	class MyAttendantIO implements AttendantIO {
-
-			@Override
-			public boolean approveWeightDiscrepancy() {
-				// TODO Auto-generated method stub
-				return false;
-			}
 
 			@Override
 			public void printDuplicateReceipt() {
@@ -185,7 +453,82 @@ public class PaymentWithCashTest {
 				attendantSignalled = true;
 				
 			}
+
+			@Override
+
+			public void notifyWeightDiscrepancyAttendantIO() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void approveWeightDiscrepancy(CustomerIO customerIO) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void checkAddedOwnBags() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void acceptOwnBags() {
+				// TODO Auto-generated method stub
+			}
+				
+
+			public void acknowledgeLowInk() {
+				// TODO Auto-generated method stub
+			}
+
+			@Override
+			public void acknowledgeLowPaper() {
+				// TODO Auto-generated method stub
+
+			}
 	}
+	
+	class MyBankIO implements BankIO {
+
+		@Override
+		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public void completeTransaction(int holdNumber) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void releaseHold(CardData data) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void blockCard(Card card) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean connectionStatus() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+}
 	
 	class MyBillSlotObserver implements BillSlotObserver{
 
@@ -227,6 +570,59 @@ public class PaymentWithCashTest {
 		
 	}
 	
+	class MyCoinSlotObserver implements CoinSlotObserver{
+
+		public AbstractDevice<? extends AbstractDeviceObserver> device = null;
+		
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			// TODO Auto-generated method stub
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToCoinInsertedEvent(CoinSlot slot) {
+			// TODO Auto-generated method stub
+			this.device = slot;
+			
+		}
+		
+	}
+	
+	class MyCoinTrayObserver implements CoinTrayObserver{
+		
+		public AbstractDevice<? extends AbstractDeviceObserver> device = null;
+
+		@Override
+		public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+			this.device = device;
+			
+		}
+
+		@Override
+		public void reactToCoinAddedEvent(CoinTray tray) {
+			this.device = tray;
+			customer.removeCoin(tray);
+		}
+		
+	}
+
+/* ---------------------------------- SetUp ---------------------------------------------------*/
+	
 	@Before
 	public void setUp() {
 		attendantSignalled = false;
@@ -239,12 +635,23 @@ public class PaymentWithCashTest {
 		billTwenty = new Bill(20, Currency.getInstance("CAD"));
 		billFifty = new Bill(50, Currency.getInstance("CAD"));
 		billHundred = new Bill(100, Currency.getInstance("CAD"));
+		coinPenny = new Coin(new BigDecimal("0.01"), Currency.getInstance("CAD"));
+		coinNickel = new Coin(new BigDecimal("0.05"), Currency.getInstance("CAD"));
+		coinDime = new Coin(new BigDecimal("0.10"), Currency.getInstance("CAD"));
+		coinQuarter = new Coin(new BigDecimal("0.25"), Currency.getInstance("CAD"));
+		coinLoonie = new Coin(new BigDecimal("1.00"), Currency.getInstance("CAD"));
+		coinToonie = new Coin(new BigDecimal("2.00"), Currency.getInstance("CAD"));
+
 		selfCheckoutStation = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50}, 
-				new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
+				new BigDecimal[] {new BigDecimal("0.05"),new BigDecimal("0.10"), new BigDecimal("0.25"),
+						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
-		ejectedBills = new ArrayList<Integer>();		
+		bank = new MyBankIO();
+		ejectedBills = new ArrayList<Integer>();
+		ejectedCoins = new ArrayList<BigDecimal>();
 		/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
+		 * Also load two hundred $0.05, $0.10, $0.25, $1.00, and $2.00 coins into the dispensers for coin change.
 		 * Every dispenser has a max capacity of 100 
 		 */
 		fiveDollarBills = new Bill[100];
@@ -257,11 +664,28 @@ public class PaymentWithCashTest {
 			twentyDollarBills[i] = billTwenty;
 			fiftyDollarBills[i] = billFifty;
 		}
+		nickelCoins = new Coin[200];
+		dimeCoins = new Coin[200];
+		quarterCoins = new Coin[200];
+		loonieCoins = new Coin[200];
+		toonieCoins = new Coin[200];
+		for(int i = 0; i < 200; i++) {
+			nickelCoins[i] = coinNickel;
+			dimeCoins[i] = coinDime;
+			quarterCoins[i] = coinQuarter;
+			loonieCoins[i] = coinLoonie;
+			toonieCoins[i] = coinToonie;
+		}
 		try {
 			selfCheckoutStation.billDispensers.get(5).load(fiveDollarBills);
 			selfCheckoutStation.billDispensers.get(10).load(tenDollarBills);
 			selfCheckoutStation.billDispensers.get(20).load(twentyDollarBills);
 			selfCheckoutStation.billDispensers.get(50).load(fiftyDollarBills);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).load(nickelCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).load(dimeCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).load(quarterCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).load(loonieCoins);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).load(toonieCoins);
 		} catch (SimulationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -270,12 +694,57 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
+		coinFalseNegative = true;
+		billFalseNegative = true;
+		billObserver = new MyBillSlotObserver();
+		selfCheckoutStation.billInput.register(billObserver);
+	}
+
+/* ---------------------------------- Teardown ------------------------------------------------*/
+	
+	// Teardown to set all objects to null or default values, and restore system.out to console
+	@After
+	public void teardown() {
+		attendantSignalled = false;
+		baos = null;
+		ps = null;
+		System.setOut(System.out);
+		billFive = null;
+		billTen = null;
+		billTwenty = null;
+		billFifty = null;
+		billHundred = null;
+		coinPenny = null;
+		coinNickel = null;
+		coinDime = null;
+		coinQuarter = null;
+		coinLoonie = null;
+		coinToonie = null;
+		selfCheckoutStation = null;
+		customer = null;
+		attendant = null;
+		ejectedBills = null;
+		fiveDollarBills = null;
+		tenDollarBills = null;
+		twentyDollarBills = null;
+		fiftyDollarBills = null;
+		nickelCoins = null;
+		dimeCoins = null;
+		quarterCoins = null;
+		loonieCoins = null;
+		toonieCoins = null;
+		receiptPrinterController = null;
+		paymentController = null;
+		billFalseNegative = true;
+		coinFalseNegative = true;
 		
 	}
+
+/* ---------------------------------- Tests ---------------------------------------------------*/
 	
-	/* Test Case: Inserting an invalid bill to the self-checkout machine
+	/* Test Case: Inserting an invalid bill denomination to the self-checkout machine
 	 * 
 	 * Description: "If the customer inserts cash that is deemed unacceptable, 
 	 * this will be returned to the customer without involving the System,
@@ -284,15 +753,18 @@ public class PaymentWithCashTest {
 	 * can accept.
 	 * 
 	 * Expected Result: The bill slot observer should call the 
-	 * reactToBillEjectedEvent method an eject the bill from the machine.
+	 * reactToBillEjectedEvent method and eject the bill from the machine.
+	 * Further, the cart total should remain unchanged.
 	 */
 	@Test
-	public void addInvalidBill_Test() {
-		billObserver = new MyBillSlotObserver();
+	public void addInvalidBillDenom_Test() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		try {
-			selfCheckoutStation.billInput.register(billObserver);
 			selfCheckoutStation.billInput.accept(billHundred);
 			assertEquals(selfCheckoutStation.billInput,billObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
 		} catch (DisabledException e) {
 			return;
 		} catch (OverloadException e) {
@@ -300,21 +772,123 @@ public class PaymentWithCashTest {
 		}
 	}
 	
-	/* Test Case: An amount less than the cart total is paid. 
+	/* Test Case: Inserting an invalid bill currency to the self-checkout machine
+	 * 
+	 * Description: "If the customer inserts cash that is deemed unacceptable, 
+	 * this will be returned to the customer without involving the System,
+	 * presumably handled in hardware." What I mean by "invalid bill" is
+	 * a bill that does not meet the currency of bills that the machine
+	 * can accept.
+	 * 
+	 * Expected Result: The bill slot observer should call the 
+	 * reactToBillEjectedEvent method and eject the bill from the machine.
+	 * Further, the cart total should remain unchanged.
+	 */
+	@Test
+	public void addInvalidBillCurr_Test() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		Bill usdBillTwenty = new Bill (20, Currency.getInstance("USD"));
+		try {
+			selfCheckoutStation.billInput.accept(usdBillTwenty);
+			assertEquals(selfCheckoutStation.billInput,billObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
+		} catch (DisabledException e) {
+			return;
+		} catch (OverloadException e) {
+			return;
+		}
+	}
+	
+	/* Test Case: Inserting an invalid coin denomination to the self-checkout machine
+	 * 
+	 * Description: "If the customer inserts cash that is deemed unacceptable, 
+	 * this will be returned to the customer without involving the System,
+	 * presumably handled in hardware." What I mean by "invalid coin" is
+	 * a coin that does not meet the set denominations of coins that the machine
+	 * can accept.
+	 * 
+	 * Expected Result: The coin tray observer should call the 
+	 * reactToCoinAddedEvent method as the invalid coin added falls straight through the slot and validator
+	 * and back to the tray. Further, the cart total should remain unchanged.
+	 */
+	@Test
+	public void addInvalidCoinDenom_Test() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		coinTrayObserver = new MyCoinTrayObserver();
+		try {
+			selfCheckoutStation.coinTray.register(coinTrayObserver);
+			selfCheckoutStation.coinSlot.accept(coinPenny);
+			assertEquals(selfCheckoutStation.coinTray,coinTrayObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
+		} catch (DisabledException e) {
+			return;
+		}
+	}
+	
+	/* Test Case: Inserting an invalid coin currency to the self-checkout machine
+	 * 
+	 * Description: "If the customer inserts cash that is deemed unacceptable, 
+	 * this will be returned to the customer without involving the System,
+	 * presumably handled in hardware." What I mean by "invalid coin" is
+	 * a coin that does not meet the currency of coins that the machine
+	 * can accept.
+	 * 
+	 * Expected Result: The coin tray observer should call the 
+	 * reactToCoinAddedEvent method as the invalid coin added falls straight through the slot and validator
+	 * and back to the tray. Further, the cart total should remain unchanged.
+	 */
+	@Test
+	public void addInvalidCoinCurr_Test() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		coinTrayObserver = new MyCoinTrayObserver();
+		Coin usdCoinQuarter = new Coin(new BigDecimal(0.25), Currency.getInstance("USD"));
+		try {
+			selfCheckoutStation.coinTray.register(coinTrayObserver);
+			selfCheckoutStation.coinSlot.accept(usdCoinQuarter);
+			assertEquals(selfCheckoutStation.coinTray,coinTrayObserver.device);
+			assertEquals(BigDecimal.valueOf(100.00),paymentController.getCartTotal());
+		} catch (DisabledException e) {
+			return;
+		}
+	}
+	
+	/* Testing that if card payment is selected, disabled exception will be thrown.
+	 * 
+	 */
+	@Test (expected = DisabledException.class)
+	public void attemptCashWhileDisabled() throws DisabledException, OverloadException {
+		// Simulate customer selecting Credit payment method, which should disable cash
+		customer.selectPaymentMethod("Credit", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		while(billFalseNegative) {	
+			selfCheckoutStation.billInput.accept(billTwenty);
+		}
+	}
+	
+	/* Test Case: An amount less than the cart total is paid via bill.
 	 * 
 	 * Description: The cart total is set at $100. $20 is paid in a single bill. 
-	 * 
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $100 to $80. Checking the amount paid
 	 * should return a string value of "20".
 	 */
 	@Test
-	public void payLessThanTotal_Test() {
-		
+	public void payBillLessThanTotal_Test() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		try {
-			selfCheckoutStation.billInput.accept(billTwenty);
+			while(billFalseNegative) {	
+				selfCheckoutStation.billInput.accept(billTwenty);
+			}
 		} catch (DisabledException e) {
 			fail("A Disabled Exception should not have been thrown");
 		} catch (OverloadException e) {
@@ -324,6 +898,30 @@ public class PaymentWithCashTest {
 		assertEquals("20.0",paymentController.getAmountPaid());
 	}
 	
+	/* Test Case: An amount less than the cart total is paid via coin.
+	 * 
+	 * Description: The cart total is set at $100. $2 is paid in a single coin. 
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $80. Checking the amount paid
+	 * should return a string value of "20".
+	 */
+	@Test
+	public void payCoinLessThanTotal_Test() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		try {
+			while(coinFalseNegative) {	
+				selfCheckoutStation.coinSlot.accept(coinToonie);
+			}
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		}
+		assertTrue(BigDecimal.valueOf(98).compareTo(paymentController.getCartTotal()) == 0);
+		assertEquals("2.00",paymentController.getAmountPaid());
+	}
+	
 	/* Test Case: The customer pays with a single bill on two separate instances. 
 	 * 
 	 * Description: The cart total is set at $100. $20 is paid in a single bill and
@@ -331,27 +929,155 @@ public class PaymentWithCashTest {
 	 * 
 	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
 	 * either the cart total or the amount paid.
-	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $100 to $80. Then it should drop 
 	 * to $75 on the second bill insertion. Checking the amount paid should return a string
 	 * value of "20", then after the second bill insertion update to a string value of "25".
 	 */
 	@Test
-	public void payTwice() {
-		
+	public void payTwiceBills() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
 		try {
 			// The customer first inserts a twenty dollar bill into the bill slot.
-			selfCheckoutStation.billInput.accept(billTwenty);
+			while(billFalseNegative) {
+				selfCheckoutStation.billInput.accept(billTwenty);
+			}
 			assertTrue(BigDecimal.valueOf(80.00).compareTo(paymentController.getCartTotal()) == 0);
 			assertEquals("20.0",paymentController.getAmountPaid());
 			
+			billFalseNegative = true;
+			
 			// The customer then inserts a five dollar bill into the bill slot.
-			selfCheckoutStation.billInput.accept(billFive);
+			while(billFalseNegative) {
+				selfCheckoutStation.billInput.accept(billFive);
+			}
 			assertTrue(BigDecimal.valueOf(75.00).compareTo(paymentController.getCartTotal()) == 0);
 			assertEquals("25.0",paymentController.getAmountPaid());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		} catch (OverloadException e) {
+			fail("An OverloadException should not have been thrown");
+		}
+	}
+	
+	/* Test Case: The customer pays with a single coin on two separate instances. 
+	 * 
+	 * Description: The cart total is set at $100. $1 is paid in a single coin and
+	 * then $0.10 dollars is paid in a single coin. 
+	 * 
+	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
+	 * either the cart total or the amount paid.
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $80. Then it should drop 
+	 * to $75 on the second bill insertion. Checking the amount paid should return a string
+	 * value of "20", then after the second bill insertion update to a string value of "25".
+	 */
+	@Test
+	public void payTwiceCoins() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		try {
+			// The customer first inserts a $1 coin (loonie) into the coin slot.
+			while(coinFalseNegative) {
+				selfCheckoutStation.coinSlot.accept(coinLoonie);
+			}
+			assertTrue(BigDecimal.valueOf(99.00).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("1.00",paymentController.getAmountPaid());
+			
+			coinFalseNegative = true;
+			
+			// The customer then inserts a $0.10 coin (dime) into the coin slot.
+			while(coinFalseNegative) {
+				selfCheckoutStation.coinSlot.accept(coinDime);
+			}
+			assertTrue(BigDecimal.valueOf(98.90).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("1.10",paymentController.getAmountPaid());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		} 
+	}
+	
+	/* Test Case: The customer pays with a single coin followed by a single bill. 
+	 * 
+	 * Description: The cart total is set at $100. $0.25 is paid in a single coin and
+	 * then $50 dollars is paid in a single bill. 
+	 * 
+	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
+	 * either the cart total or the amount paid when mixing payment methods
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $99.75. Then it should drop 
+	 * to $49.75 on the second payment insertion. Checking the amount paid should return a string
+	 * value of "0.25", then after the second payment insertion update to a string value of "50.25".
+	 */
+	@Test
+	public void payTwiceCoinThenBill() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		try {
+			// The customer first inserts a $0.25 coin (quarter) into the coin slot.
+			while(coinFalseNegative) {
+				selfCheckoutStation.coinSlot.accept(coinQuarter);
+			}
+			assertTrue(BigDecimal.valueOf(99.75).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("0.25",paymentController.getAmountPaid());
+			
+			// The customer then inserts a 50 dollar bill into the bill slot.
+			while(billFalseNegative) {
+				selfCheckoutStation.billInput.accept(billFifty);
+			}
+			assertTrue(BigDecimal.valueOf(49.75).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("50.25",paymentController.getAmountPaid());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		} catch (OverloadException e) {
+			fail("An OverloadException should not have been thrown");
+		}
+	}
+	
+	/* Test Case: The customer pays with a single bill followed by a single coin. 
+	 * 
+	 * Description: The cart total is set at $100. $10 is paid in a single bill and
+	 * then $2 dollar is paid in a single coin. 
+	 * 
+	 * The purpose of this test is to see if any weird behaviors/occurrences happen to 
+	 * either the cart total or the amount paid when mixing payment methods
+	 * 
+	 * Expected Result: The cart total should drop from $100 to $90. Then it should drop 
+	 * to $88 on the second payment insertion. Checking the amount paid should return a string
+	 * value of "10", then after the second payment insertion update to a string value of "12".
+	 */
+	@Test
+	public void payTwiceBillThenCoin() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		paymentController.setCartTotal(BigDecimal.valueOf(100.00));
+		try {
+			// The customer first inserts a ten dollar bill into the bill slot.
+			while(billFalseNegative) {
+				selfCheckoutStation.billInput.accept(billTen);
+			}
+			assertTrue(BigDecimal.valueOf(90).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("10.0",paymentController.getAmountPaid());
+			
+			// The customer then inserts a $2 coin (toonie) into the coin slot.
+			while(coinFalseNegative) {
+				selfCheckoutStation.coinSlot.accept(coinToonie);
+			}
+			assertTrue(BigDecimal.valueOf(88).compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("12.00",paymentController.getAmountPaid());
 			
 		} catch (DisabledException e) {
 			fail("A Disabled Exception should not have been thrown");
@@ -366,20 +1092,22 @@ public class PaymentWithCashTest {
 	 * 
 	 * There shouldn't be a need to test this with multiple instances of paying with cash
 	 * as the previous test had covered any weird behaviors that could have occurred.
-	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $50 to $0. 
 	 * Checking the amount paid should return a string value of "50".
 	 * Checking the total change should return a string value of be "0.00'.
 	 */
 	@Test
-	public void payFullNoChange() {
-		
+	public void payFullBillNoChange() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(50.00));
 		try {
 			// The customer pays the full fifty dollars using a single fifty dollar bill.
-			selfCheckoutStation.billInput.accept(billFifty);
+			while(billFalseNegative) {
+				selfCheckoutStation.billInput.accept(billFifty);
+			}
 			assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 			assertEquals("50.0",paymentController.getAmountPaid());
 			assertEquals("0.0",paymentController.getTotalChange());
@@ -391,27 +1119,60 @@ public class PaymentWithCashTest {
 		} 
 	}
 	
+	/* Test Case: The customer pays exactly the total cart amount. 
+	 * 
+	 * Description: The cart total is set at $0.05. $0.05 is paid in a single nickel.
+	 * 
+	 * There shouldn't be a need to test this with multiple instances of paying with cash
+	 * as the previous test had covered any weird behaviors that could have occurred.
+	 * 
+	 * Expected Result: The cart total should drop from $0.05 to $0. 
+	 * Checking the amount paid should return a string value of "0.05".
+	 * Checking the total change should return a string value of be "0.00'.
+	 */
+	@Test
+	public void payFullCoinNoChange() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		paymentController.setCartTotal(BigDecimal.valueOf(0.05));
+		try {
+			// The customer pays the full $0.05 using a single nickel.
+			while(coinFalseNegative) {
+				selfCheckoutStation.coinSlot.accept(coinNickel);
+			}
+			assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("0.05",paymentController.getAmountPaid());
+			assertEquals("0.00",paymentController.getTotalChange());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		}
+	}
+	
 	/* Test Case: The customer pays over the total cart amount. 
 	 * 
 	 * Description: The cart total is set at $10. $50 is paid in a single bill.
 	 * 
 	 * There shouldn't be a need to test this with multiple instances of paying with cash
 	 * as the previous test had covered any weird behaviors that could have occurred.
-	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * 
 	 * Expected Result: The cart total should drop from $10 to $0. 
 	 * Checking the amount paid should return a string value of "50".
 	 * Checking the total change should return a string value of be "40.00".
 	 */
 	@Test
-	public void payFullWithChange_Test(){
-		
+	public void payFullBillWithChange_Test(){
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		paymentController.setCartTotal(BigDecimal.valueOf(10.00));
 		try {
 			// The customer pays the full fifty dollars using a single fifty dollar bill.
 			System.out.println("Payment: " + billFifty.getValue());
-			selfCheckoutStation.billInput.accept(billFifty);
+			while(billFalseNegative) {
+				selfCheckoutStation.billInput.accept(billFifty);
+			}
 			assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
 			assertEquals("50.0",paymentController.getAmountPaid());
 			assertEquals("40.0",paymentController.getTotalChange());
@@ -422,28 +1183,162 @@ public class PaymentWithCashTest {
 			fail("An OverloadException should not have been thrown");
 		} 
 	}
+	
+	/* Test Case: The customer pays over the total cart amount. 
+	 * 
+	 * Description: The cart total is set at $1.75 and $2 is paid in a coin.
+	 * 
+	 * There shouldn't be a need to test this with multiple instances of paying with cash
+	 * as the previous test had covered any weird behaviors that could have occurred.
+	 * 
+	 * Expected Result: The cart total should drop from $1.75 to $0. 
+	 * Checking the amount paid should return a string value of "2".
+	 * Checking the total change should return a string value of be "0.25".
+	 */
+	@Test
+	public void payFullCoinWithChange_Test(){
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		paymentController.setCartTotal(BigDecimal.valueOf(1.75));
+		try {
+			// The customer pays the full balance using a single toonie ($2).
+			System.out.println("Payment: " + coinToonie.getValue());
+			while(coinFalseNegative) {
+				selfCheckoutStation.coinSlot.accept(coinToonie);
+			}
+			assertTrue(BigDecimal.ZERO.compareTo(paymentController.getCartTotal()) == 0);
+			assertEquals("2.00",paymentController.getAmountPaid());
+			assertEquals("0.25",paymentController.getTotalChange());
+			
+		} catch (DisabledException e) {
+			fail("A Disabled Exception should not have been thrown");
+		}
+	}
 
-	/* Test Case: The customer pays over the total cart amount by 30 dollars and the total change is dispensed. 
+	/* Test Case: The customer pays over the total cart amount with a bill by 30 dollars and 
+	 * the total change in bills only is dispensed. 
 	 * 
 	 * Description: The cart total is set at $20. $50 is paid in a single bill.
 	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
-	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
+	 * Whether or not the cart Total is dropping has been tested already. So it's not tested here.
 	 * 
 	 * Expected Result: The total change is calculated to 50-20 = 30
 	 * Checking the total change should return a string value of "30.0".
 	 * Checking the change due should return a double value of be "0.0" which is converted to string.
+	 * The ejected bills should be $20 and $10, which is stored as an array converted to string.
 	 */
 	@Test
-	public void totalChangeDueThirtyDollars_Test() throws DisabledException, OverloadException{
-		billObserverStub = new DispenserStub();
+	public void totalChangeDueBillsThirtyDollars_Test() throws DisabledException, OverloadException{
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
 		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
 		paymentController.setCartTotal(BigDecimal.valueOf(20.00));		
-		selfCheckoutStation.billInput.accept(billFifty);
+		while(billFalseNegative) {
+			selfCheckoutStation.billInput.accept(billFifty);
+		}
 		assertEquals("30.0",paymentController.getTotalChange());
 		assertEquals("0.0",""+paymentController.getChangeDue());
 		assertEquals("[10, 20]",ejectedBills.toString());
+	}
+	
+	/* Test Case: The customer pays over the total cart amount with a coin by $1.35 and 
+	 * the total change in coins only is dispensed. 
+	 * 
+	 * Description: The cart total is set at $0.65. $2 is paid in a single coin.
+	 *    
+	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
+	 * 
+	 * Expected Result: The total change is calculated to 0.65-2.00 = 1.35
+	 * Checking the total change should return a string value of "1.35".
+	 * Checking the change due should return a double value of be "0.0" which is converted to string.
+	 * The ejected coins should be $1, $0.25, and $0.10, which is stored as an array converted to string.
+	 */
+	@Test
+	public void totalChangeDueCoinsDollarThirtyFive_Test() throws DisabledException{
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(0.65));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		assertEquals("1.35",paymentController.getTotalChange());
+		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertEquals("[0.10, 0.25, 1.00]",ejectedCoins.toString());
+	}
+	
+	/* Test Case: The customer pays over the total cart amount with a coin by $0.06 and 
+	 * the total change in coins only is dispensed. 
+	 * 
+	 * Description: The cart total is set at $1.94. $2 is paid in a single coin.
+	 *    
+	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
+	 * 
+	 * Expected Result: The total change is calculated to 1.94-2.00 = 0.06
+	 * Checking the total change should return a string value of "0.06".
+	 * Checking the change due should return a double value of be "0.01" which is converted to string.
+	 * The ejected coin should be $0.05, which is stored as an array converted to string.
+	 */
+	@Test
+	public void totalChangeRemains() throws DisabledException{
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(1.94));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		assertEquals("0.06",paymentController.getTotalChange());
+		assertEquals("0.01",""+paymentController.getChangeDue());
+		assertEquals("[0.05]",ejectedCoins.toString());
+		assertTrue(attendantSignalled);
+	}
+	
+	/* Test Case: The customer pays over the total cart amount with a bill by $16.40 and 
+	 * the total change in both bills and coins is dispensed. 
+	 * 
+	 * Description: The cart total is set at $3.60. $20 is paid in a single bill.
+	 *    
+	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
+	 * 
+	 * Expected Result: The total change is calculated to 3.60-20.00 = 16.40
+	 * Checking the total change should return a string value of "16.40".
+	 * Checking the change due should return a double value of be "0.0" which is converted to string.
+	 * The ejected bills should be $10 and $5, which is stored as an array converted to string.
+	 * The ejected coins should be $1, $0.25, $0.10, and $0.05, which is stored as an array converted to string.
+	 */
+	@Test
+	public void totalChangeDueMixed_Test() throws DisabledException, OverloadException{
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		billObserverStub = new BillDispenserStub();
+		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
+		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);		
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(3.60));		
+		while(billFalseNegative) {
+			selfCheckoutStation.billInput.accept(billTwenty);
+		}
+		assertEquals("16.4",paymentController.getTotalChange());
+		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertEquals("[5, 10]",ejectedBills.toString());
+		assertEquals("[0.05, 0.10, 0.25, 1.00]",ejectedCoins.toString());
 	}
 
 	/* Test Case: To see if updateCartTotal functions properly.
@@ -454,39 +1349,14 @@ public class PaymentWithCashTest {
 	 */
 	@Test
 	public void cartUpdate_Test() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
 		paymentController.updateCartTotal(BigDecimal.valueOf(20.00));
 		paymentController.updateCartTotal(BigDecimal.valueOf(20.00));
 		assertTrue(BigDecimal.valueOf(40.00).compareTo(paymentController.getCartTotal()) == 0);
 	}
 	
-	/* Test Case: Testing dispenseChange when change is 0.
-	 * 
-	 * Description: Change will be set to zero and then dispense change will be called.
-	 * 
-	 * Expected Result: A Simulation Exception will be thrown
-	 */
-	@Test (expected = SimulationException.class)
-	public void dispenseZeroChange_Test() {
-		paymentController.setChangeDue(BigDecimal.ZERO);
-		paymentController.dispenseChange();
-	}
-	
-	/* Test Case: To see if the AttendantIO is being properly notified
-	 * when change is below the minimum denom of 5.
-	 * 
-	 * Description: Will pay $5 when cost is 3, causing change of 2
-	 * 
-	 * Expected Result: AttendantIO should be called.
-	 */
-	@Test
-	public void changeTooSmallAttendantIO_Test() throws OverloadException {
-		paymentController.setCartTotal(BigDecimal.valueOf(3.00));
-		selfCheckoutStation.billInput.accept(billFive);
-		String expected = "changeRemainsNoDenom Called: 2.0";
-		assertEquals(expected,baos.toString());
-	}
-	
-	/* Test Case: When the denom that should be emitted is empty, but this
+	/* Test Case: When the bill denom that should be emitted is empty, but this
 	 * is not the smallest denom.
 	 * 
 	 * Description: Will pay $50 when the charge is $30, so that the change is
@@ -496,53 +1366,89 @@ public class PaymentWithCashTest {
 	 * Expected: Expecting two tens to be emitted, and coverage to be improved.
 	 */
 	@Test
-	public void emitEmptyNotSmallest_Test() throws OverloadException {
+	public void emitEmptyNotSmallestBill_Test() throws OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
 		// Emptying billDispenser(20)
 		selfCheckoutStation.billDispensers.get(20).unload();
-		billObserverStub = new DispenserStub();
+		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
 		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
 		paymentController.setCartTotal(BigDecimal.valueOf(30.00));		
-		selfCheckoutStation.billInput.accept(billFifty);
+		while(billFalseNegative) {
+			selfCheckoutStation.billInput.accept(billFifty);
+		}
 		assertEquals("20.0",paymentController.getTotalChange());
 		assertEquals("0.0",""+paymentController.getChangeDue());
 		assertEquals("[10, 10]",ejectedBills.toString());
 	}
 	
-	/* Test Case: When the denom that should be emitted is empty, but this
-	 * is the smallest denom.
+	/* Test Case: When the coin denom that should be emitted is empty, but this
+	 * is not the smallest denom.
 	 * 
-	 * Description: Will pay $10 when the charge is $5, which should lead to 
-	 * $5 being emitted. However, it will be empty.
+	 * Description: Will pay $2 when the charge is $1, so that the change is
+	 * $1. Thus, the denom $1 should be attempted to be ejected, but will be
+	 * empty.
 	 * 
-	 * Expected: AttendantIO should be called and disabledException should
-	 * be thrown as the machine will be suspended.
+	 * Expected: Expecting four quarters to be emitted, and coverage to be improved.
 	 */
 	@Test
-	public void emitEmptySmallest_Test() throws OverloadException {
-		// Emptying billDispenser(20)
-		selfCheckoutStation.billDispensers.get(5).unload();
-		billObserverStub = new DispenserStub();
-		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
-		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
-		paymentController.setCartTotal(BigDecimal.valueOf(5.00));		
-		try{
-			selfCheckoutStation.billInput.accept(billTen);
-			fail();
+	public void emitEmptyNotSmallestCoin_Test() throws OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		// Emptying coinDispenser(1.00)
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(1.00));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
 		}
-		catch(DisabledException e) {
-			assertEquals("5.0",paymentController.getTotalChange());
-			assertEquals("5.0",""+paymentController.getChangeDue());
-			String expected = "changeRemainsNoDenom Called: 5.0";
-			assertEquals(expected,baos.toString());
-		}
+		assertEquals("1.00",paymentController.getTotalChange());
+		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertEquals("[0.25, 0.25, 0.25, 0.25]",ejectedCoins.toString());
 	}
+	
+	/* Test Case: When the smallest bill denom that should be emitted is empty, but there
+	 * are enough coins available to make up the rest of the change
+	 * 
+	 * Description: Will pay $50 when the charge is $35, so that the change is
+	 * $15. A $10 will be ejected, then the denom $5 should be attempted to be ejected, but will be
+	 * empty.
+	 * 
+	 * Expected: Expecting two toonies and one loonie to be emitted, and coverage to be improved.
+	 */
+	@Test
+	public void emitEmptyCoinInsteadOfBill_Test() throws OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		// Emptying billDispenser(5)
+		selfCheckoutStation.billDispensers.get(5).unload();
+		billObserverStub = new BillDispenserStub();
+		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);
+		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(35.00));		
+		while(billFalseNegative) {
+			selfCheckoutStation.billInput.accept(billFifty);
+		}
+		assertEquals("15.0",paymentController.getTotalChange());
+		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertEquals("[10]",ejectedBills.toString());
+		assertEquals("[1.00, 2.00, 2.00]",ejectedCoins.toString());
+	}
+	
 	/* Test Case: The customer pays over the total cart amount by 5 dollars and the total change is dispensed. 
 	 * 
 	 * Description: The cart total is set at $45. $50 is paid in a single bill.So one 5 dollar bill is ejected for
 	 * the customer.
 	 *    
-	 * There is no need to test for payments that would require coins, credit, or crypto.
 	 * Whether or not the cart Total is dropping has been tested already. So its not tested here.
 	 * The attendant should also not be notified in this boundary case, which is being tested here.
 	 * 
@@ -552,14 +1458,330 @@ public class PaymentWithCashTest {
 	 */
 	@Test
 	public void totalChangeDueFiveDollars() throws DisabledException, OverloadException{
-		billObserverStub = new DispenserStub();
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		billObserverStub = new BillDispenserStub();
 		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);
 		paymentController.setCartTotal(BigDecimal.valueOf(45.00));		
-		selfCheckoutStation.billInput.accept(billFifty);
+		while(billFalseNegative) {
+			selfCheckoutStation.billInput.accept(billFifty);
+		}
 		assertEquals("5.0",paymentController.getTotalChange());	
 		assertEquals("0.0",""+paymentController.getChangeDue());	
 		assertEquals("[5]",ejectedBills.toString());
 		assertFalse(attendantSignalled);
 	}
 	
+	/* Test Case: When there are not sufficient coins to dispense change.
+	 * 
+	 * Description: Will pay $2 when the charge is $1.50, so that the change is
+	 * $0.50. Thus, the $0.25, $0.10, and $0.05 will all attempt to be ejected, but they 
+	 * will all be empty.
+	 * 
+	 * Expected: Expecting no change to be dispensed, and the station suspended with the attendant signalled.
+	 */
+	@Test
+	public void insufficientCoinChange() throws OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		// Emptying coinDispensers
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(1.50));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		assertEquals("0.50",paymentController.getTotalChange());
+		assertEquals("0.50",""+paymentController.getChangeDue());
+		assertEquals("[]",ejectedCoins.toString());
+		assertTrue(attendantSignalled);
+	}
+	
+	/* Test Case: When coins are dispensed but run out midway through giving change.
+	 * 
+	 * Description: Will pay $2 when the charge is $1.50, so that the change is
+	 * $0.50. Thus, the $0.25, $0.10, and $0.05 will all attempt to be ejected, but there will
+	 * only be one of each of those coins in the machine, making a total of $0.40 of change.
+	 * 
+	 * Expected: Expecting $0.40 of change to be dispensed, and the station suspended 
+	 * with the attendant signalled as $0.10 remains to be given.
+	 */
+	@Test
+	public void partialCoinEnoughChange() throws OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		// Emptying coinDispensers, to be reloaded with a single coin each
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
+		
+		// Load in a single $0.05, $0.10, and $0.25 coin
+		try {
+			Coin[] oneNickel = new Coin[] {coinNickel};
+			Coin[] oneDime = new Coin[] {coinDime};
+			Coin[] oneQuarter = new Coin[] {coinQuarter};
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).load(oneNickel);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).load(oneDime);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).load(oneQuarter);
+		} catch (SimulationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (OverloadException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// Register relevant observers
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(1.60));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		assertEquals("0.40",paymentController.getTotalChange());
+		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertEquals("[0.05, 0.10, 0.25]",ejectedCoins.toString());
+		assertFalse(attendantSignalled);
+	}
+	
+	
+	
+	/* Test Case: When bills are dispensed but the last of each is used through giving change.
+	 * 
+	 * Description: Will pay $50 when the charge is $15, so that the change is
+	 * $35. Thus, the $20, $10, and $5 will all attempt to be ejected, but there will
+	 * only be one of each of those bills in the machine, making a total of $35 of change.
+	 * 
+	 * Expected: Expecting $35 of change to be dispensed, and the station not suspended since
+	 * all change should be given out.
+	 * 
+	 */
+	@Test
+	public void partialBillEnoughChange() throws DisabledException, OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		// Emptying billDispensers, to be reloaded with a single bill each
+		selfCheckoutStation.billDispensers.get(5).unload();
+		selfCheckoutStation.billDispensers.get(10).unload();
+		selfCheckoutStation.billDispensers.get(20).unload();
+		
+		
+		// Emptying all coinDispensers, to ensure only bills in machine to dispense
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
+		
+		// Load in a single $5, $10, and $20 bill
+		try {
+			Bill[] oneFiveBill = new Bill[] {billFive};
+			Bill[] oneTenBill = new Bill[] {billTen};
+			Bill[] oneTwentyBill = new Bill[] {billTwenty};
+			selfCheckoutStation.billDispensers.get(5).load(oneFiveBill);
+			selfCheckoutStation.billDispensers.get(10).load(oneTenBill);
+			selfCheckoutStation.billDispensers.get(20).load(oneTwentyBill);
+		} catch (SimulationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (OverloadException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// Register observers over the relevant dispensers and empty ones
+		billObserverStub = new BillDispenserStub();
+		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
+		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
+		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(15));		
+
+		while(billFalseNegative) {
+			selfCheckoutStation.billInput.accept(billFifty);
+		}
+		assertEquals("35.0",paymentController.getTotalChange());
+		assertEquals("0.0",""+paymentController.getChangeDue());
+		assertEquals("[20, 10, 5]",ejectedBills.toString());
+		assertFalse(attendantSignalled);
+	}
+	
+	/* Test Case: When coins are dispensed but run out midway through giving change.
+	 * 
+	 * Description: Will pay $2 when the charge is $1.50, so that the change is
+	 * $0.50. Thus, the $0.25, $0.10, and $0.05 will all attempt to be ejected, but there will
+	 * only be one of each of those coins in the machine, making a total of $0.40 of change.
+	 * 
+	 * Expected: Expecting $0.40 of change to be dispensed, and the station suspended 
+	 * with the attendant signalled as $0.10 remains to be given.
+	 */
+	@Test
+	public void partialCoinNotEnoughChange() throws OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		// Emptying coinDispensers, to be reloaded with a single coin each
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
+		
+		// Load in a single $0.05, $0.10, and $0.25 coin
+		try {
+			Coin[] oneNickel = new Coin[] {coinNickel};
+			Coin[] oneDime = new Coin[] {coinDime};
+			Coin[] oneQuarter = new Coin[] {coinQuarter};
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).load(oneNickel);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).load(oneDime);
+			selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).load(oneQuarter);
+		} catch (SimulationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (OverloadException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// Register relevant observers
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(1.50));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		assertEquals("0.50",paymentController.getTotalChange());
+		assertEquals("0.10",""+paymentController.getChangeDue());
+		assertEquals("[0.05, 0.10, 0.25]",ejectedCoins.toString());
+		assertTrue(attendantSignalled);
+	}
+
+
+/* Test Case: When bills are dispensed but run out midway through giving change.
+	 * 
+	 * Description: Will pay $50 when the charge is $10, so that the change is
+	 * $40. Thus, the $20, $10, and $5 will all attempt to be ejected, but there will
+	 * only be one of each of those bills in the machine, making a total of $35 of change.
+	 * 
+	 * Expected: Expecting $35 of change to be dispensed, and the station suspended 
+	 * with the attendant signalled as $5 remains to be given.
+	 * 
+	 */
+	@Test
+	public void partialBillNotEnoughChange() throws OverloadException {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.billValidator.register(new BillValidatorStub());
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		// Emptying billDispensers, to be reloaded with a single bill each
+		selfCheckoutStation.billDispensers.get(5).unload();
+		selfCheckoutStation.billDispensers.get(10).unload();
+		selfCheckoutStation.billDispensers.get(20).unload();
+		
+		// Emptying all coinDispensers, to ensure only bills in machine to dispense
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).unload();
+		
+		// Load in a single $5, $10, and $20 bill
+		try {
+			Bill[] oneFiveBill = new Bill[] {billFive};
+			Bill[] oneTenBill = new Bill[] {billTen};
+			Bill[] oneTwentyBill = new Bill[] {billTwenty};
+			selfCheckoutStation.billDispensers.get(5).load(oneFiveBill);
+			selfCheckoutStation.billDispensers.get(10).load(oneTenBill);
+			selfCheckoutStation.billDispensers.get(20).load(oneTwentyBill);
+		} catch (SimulationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (OverloadException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// Register relevant observers
+		billObserverStub = new BillDispenserStub();
+		selfCheckoutStation.billDispensers.get(20).register(billObserverStub);
+		selfCheckoutStation.billDispensers.get(10).register(billObserverStub);
+		selfCheckoutStation.billDispensers.get(5).register(billObserverStub);
+		
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		paymentController.setCartTotal(BigDecimal.valueOf(10));
+		while(billFalseNegative) {
+			selfCheckoutStation.billInput.accept(billFifty);
+		}
+		assertEquals("40.0",paymentController.getTotalChange());
+		assertEquals("5.0",""+paymentController.getChangeDue());
+		assertEquals("[20, 10, 5]",ejectedBills.toString());
+		assertTrue(attendantSignalled);
+	}
+	
+	/* Test Case: When more than 20 coins are dispensed at once, but 
+	 * customer is collecting each coin as it comes out.
+	 * 
+	 * Description: Will pay $2 when the charge is $0.25, so that the change is
+	 * $1.75. All denominations of coins will be emptied except for $0.05. 
+	 * 
+	 * Expected: Expecting $1.75 of change to be dispensed as 35 coins, since the customer
+	 * will be emptying the coin tray to ensure all coins can be dispensed.
+	 */
+	@Test
+	public void coinTrayMoreThan20Coins() {
+		// Simulate customer selecting Cash payment method
+		customer.selectPaymentMethod("Cash", paymentController);
+		selfCheckoutStation.coinValidator.register(new CoinValidatorStub());
+		// Emptying other coinDispensers
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("2.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).unload();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).unload();
+		
+		// Register relevant observers
+		coinObserverStub = new CoinDispenserStub();
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("1.00")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.25")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.10")).register(coinObserverStub);
+		selfCheckoutStation.coinDispensers.get(new BigDecimal ("0.05")).register(coinObserverStub);
+		
+		coinTrayObserver = new MyCoinTrayObserver();
+		selfCheckoutStation.coinTray.register(coinTrayObserver);
+		
+		paymentController.setCartTotal(BigDecimal.valueOf(0.25));		
+		while(coinFalseNegative) {
+			selfCheckoutStation.coinSlot.accept(coinToonie);
+		}
+		
+		assertEquals("1.75",paymentController.getTotalChange());
+		assertEquals("0.00",""+paymentController.getChangeDue());
+		assertEquals("[0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05, "
+				+ "0.05, 0.05, 0.05, 0.05, 0.05]",ejectedCoins.toString());
+	}
 }

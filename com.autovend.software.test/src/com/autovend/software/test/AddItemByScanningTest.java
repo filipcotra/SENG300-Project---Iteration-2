@@ -1,10 +1,17 @@
-/** 
- * Filip Cotra - 30086750
- * Khondaker Samin Rashid - 30143490
- * Nishan Soni - 30147280
- * Aaron Tigley - 30159927
- * Zainab Bari - 30154224
- */
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
 
 package com.autovend.software.test;
 
@@ -22,14 +29,22 @@ import org.junit.Test;
 
 import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
+import com.autovend.Card;
 import com.autovend.Numeral;
+import com.autovend.Card.CardData;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CoinTray;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
+
+import com.autovend.software.BankIO;
+
+import com.autovend.software.BaggingAreaController;
+
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -42,10 +57,12 @@ public class AddItemByScanningTest {
 	PrintReceipt receiptPrinterController;
 	AddItemByScanningController addItemByScanningController;
 	PaymentControllerLogic paymentController;
+	BaggingAreaController baggingAreaController;
 	SelfCheckoutStation selfCheckoutStation;
 	BarcodedProduct testProduct;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
+	MyBankIO bank;
 	Barcode barcode;
 	BarcodedUnit scannedItem;
 	BarcodedUnit placedItem;
@@ -102,6 +119,113 @@ public class AddItemByScanningTest {
 			// TODO Auto-generated method stub
 			
 		}
+		
+		@Override
+		public boolean selectAddOwnBags() {
+			return true;
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPurchaseBags(int quantity) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalFinishedPurchasingBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalReadyForInteraction() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPutPurchasedBagsOnBaggingArea() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public String getMembershipNumber() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean cancelMembershipInput() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void notifyBadMembershipNumberCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void removeCoin(CoinTray tray) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void payWithCreditComplete(BigDecimal amountDue) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void payWithDebitComplete(BigDecimal amountDue) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void transactionFailure() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void setCardPaymentAmount(BigDecimal amount) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void insertCard(Card card, String pin) {
+			// TODO Auto-generated method stub
+			
+		}
 
 
 		
@@ -109,10 +233,6 @@ public class AddItemByScanningTest {
 	
 	class MyAttendantIO implements AttendantIO {
 
-		@Override
-		public boolean approveWeightDiscrepancy() {
-			return approveFlag;
-		}
 
 		@Override
 		public void printDuplicateReceipt() {
@@ -126,6 +246,80 @@ public class AddItemByScanningTest {
 			
 		}
 
+		@Override
+
+		public void notifyWeightDiscrepancyAttendantIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void approveWeightDiscrepancy(CustomerIO customerIO) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void checkAddedOwnBags() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void acceptOwnBags() {
+			// TODO Auto-generated method stub
+		}
+		
+		@Override
+		public void acknowledgeLowInk() {
+			// TODO Auto-generated method stub
+		}
+
+		
+		@Override
+		public void acknowledgeLowPaper() {
+			// TODO Auto-generated method stub
+		}
+
+	}
+	
+	class MyBankIO implements BankIO {
+
+		@Override
+		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public void completeTransaction(int holdNumber) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void releaseHold(CardData data) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void blockCard(Card card) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean connectionStatus() {
+			// TODO Auto-generated method stub
+			return false;
+		}
 	}
 	/**
 	 * An example setup that runs a normal execution of the use case
@@ -150,12 +344,15 @@ public class AddItemByScanningTest {
 		ProductDatabases.BARCODED_PRODUCT_DATABASE.put(barcode, testProduct);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
+		bank = new MyBankIO();
 		
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
+		
+		baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
 		
 		addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, 
-				attendant, paymentController);
+				attendant, paymentController, baggingAreaController);
 		approveFlag = true;
 	}
 	
@@ -205,9 +402,9 @@ public class AddItemByScanningTest {
 		/**
 		 * Step 4: System: Updates the expected weight from the Bagging Area
 		 */
-		assertEquals(0, addItemByScanningController.getExpectedWeight(), 0.00);
+		assertEquals(0, baggingAreaController.getExpectedWeight(), 0.00);
 		customer.scanItem(scannedItem);
-		assertEquals(12.0, addItemByScanningController.getExpectedWeight(), 0.00);
+		assertEquals(12.0, baggingAreaController.getExpectedWeight(), 0.00);
 	}
 	
 	@Test
@@ -234,10 +431,10 @@ public class AddItemByScanningTest {
 		/**
 		 * Step 6: Bagging Area: Signals to the System that the weight has changed.
 		 */
-		assertEquals(0, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(0, baggingAreaController.getActualWeight(), 0.00);
 		customer.scanItem(scannedItem);
 		customer.placeScannedItemInBaggingArea(placedItem);
-		assertEquals(12, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(12, baggingAreaController.getActualWeight(), 0.00);
 	}
 	
 	@Test
@@ -246,10 +443,10 @@ public class AddItemByScanningTest {
 		 * Step 6: Bagging Area: Signals to the System that the weight has changed.
 		 */
 		placedItem = new BarcodedUnit(barcode, 15);
-		assertEquals(0, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(0, baggingAreaController.getActualWeight(), 0.00);
 		customer.scanItem(scannedItem);
 		customer.placeScannedItemInBaggingArea(placedItem);
-		assertEquals(15, addItemByScanningController.getActualWeight(), 0.00);
+		assertEquals(15, baggingAreaController.getActualWeight(), 0.00);
 	}
 	
 	

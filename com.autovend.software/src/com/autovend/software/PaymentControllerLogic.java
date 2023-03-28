@@ -1,33 +1,61 @@
-/** 
- * Filip Cotra - 30086750
- *  Khondaker Samin Rashid - 30143490
- *  Nishan Soni - 30147289
- *  Aaron Tigley - 30159927
- *  Zainab Bari - 30154224
- */
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
 
 package com.autovend.software;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Currency;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.Arrays;
 import java.util.Collections;
 
 import com.autovend.Bill;
+import com.autovend.BlockedCardException;
+import com.autovend.Card;
+import com.autovend.Coin;
+import com.autovend.CreditCard;
+import com.autovend.DebitCard;
+import com.autovend.InvalidPINException;
+import com.autovend.Card.CardData;
+import com.autovend.Card.CardInsertData;
+import com.autovend.ChipFailureException;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.BillValidator;
+import com.autovend.devices.CardReader;
+import com.autovend.devices.CoinDispenser;
+import com.autovend.devices.CoinTray;
+import com.autovend.devices.CoinValidator;
+import com.autovend.devices.DisabledException;
 import com.autovend.devices.EmptyException;
 import com.autovend.devices.ReceiptPrinter;
 import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.BillValidatorObserver;
+import com.autovend.devices.observers.CoinDispenserObserver;
+import com.autovend.devices.observers.CoinTrayObserver;
+import com.autovend.devices.observers.CoinValidatorObserver;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
 import com.autovend.devices.observers.BillStorageObserver;
+import com.autovend.devices.observers.CardReaderObserver;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.devices.SimulationException;
 
@@ -36,7 +64,8 @@ import com.autovend.devices.SimulationException;
  * 
  * @author Filip Cotra
  */
-public class PaymentControllerLogic implements BillValidatorObserver, BillDispenserObserver, BillSlotObserver {
+public class PaymentControllerLogic implements BillValidatorObserver, BillDispenserObserver, BillSlotObserver, 
+CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserver {
 	private BigDecimal cartTotal;
 	private BigDecimal changeDue;
 	private SelfCheckoutStation station;
@@ -52,7 +81,17 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	private ArrayList<String> itemCostList = new ArrayList<String>();
 	private BigDecimal amountPaid;
 	private BigDecimal totalChange;
+	private Map<BigDecimal, CoinDispenser> coinDispensers;
+	private List<BigDecimal> coinDenominations;
+	private BigDecimal maxCoinDenom;
+	private BigDecimal minCoinDenom;
 	private BillSlot output;
+	private BillSlot input;
+	private Boolean suspended;
+	private BigDecimal amountToPayCard; // The customer should indicate this
+	private BankIO myBank;
+	private CardReader cardReader;
+	String cardMethodSelected;
 	
 	/**
 	 * Constructor. Takes a Self-Checkout Station  and initializes
@@ -68,9 +107,10 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 * @param attendant
 	 * 		AttendantIO interface that is monitoring the machine
 	 */
-	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, PrintReceipt printerLogic) {
+	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, BankIO bank, PrintReceipt printerLogic) {
 		this.station = SCS;
 		this.station.billValidator.register(this);
+		this.station.coinValidator.register(this);
 		this.denominations = station.billDenominations;
 		Arrays.sort(this.denominations);
 		this.maxDenom = BigDecimal.valueOf(Arrays.stream(this.denominations).max().getAsInt());
@@ -83,14 +123,34 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.myCustomer = customer;
 		this.myAttendant = attendant;
 		this.printerLogic = printerLogic;
+		this.coinDenominations = station.coinDenominations;
+		Collections.sort(this.coinDenominations);
+		this.maxCoinDenom = Collections.max(this.coinDenominations);
+		this.minCoinDenom = Collections.min(this.coinDenominations);
+		this.coinDispensers = station.coinDispensers;
+		for (BigDecimal value : this.coinDenominations) {
+			this.coinDispensers.get(value).register(this);
+		}
 		this.amountPaid = BigDecimal.valueOf(0.0);
-		this.output = station.billOutput;
-		this.output.register(this);
 		this.cartTotal = BigDecimal.valueOf(0.0);
 		this.totalChange = BigDecimal.valueOf(0.0);
 		this.changeDue = BigDecimal.valueOf(0.0);
+		this.output = station.billOutput;
+		this.input = station.billInput;
+		this.output.register(this);
+		this.input.register(this);
+		this.suspended = false;
+		this.myBank = bank;
+		this.amountToPayCard = BigDecimal.ZERO; // By default
+		this.cardReader = station.cardReader;
+		this.cardReader.register(this);
+		this.cardMethodSelected = null;
+		this.disableCardPayment();
+		this.disableCashPayment();
 	}
 
+/* ------------------------ General Methods --------------------------------------------------*/
+	
 	/**
 	 * Updates the amount paid by the customer.
 	 * 
@@ -193,10 +253,61 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	}
 
 	/**
-	 * Suspends machine
+	 * Suspends machine. This is updated with the new SelfCheckoutMachine objects now.
 	 */
 	private void suspendMachine() {
+		this.suspended = true;
 		this.station.baggingArea.disable();
+		for(int denom : this.denominations) {
+			this.station.billDispensers.get(denom).disable();
+		}
+		this.station.billInput.disable();
+		this.station.billOutput.disable();
+		this.station.handheldScanner.disable();
+		this.station.mainScanner.disable();
+		this.station.cardReader.disable();
+		this.station.coinSlot.disable();
+		this.station.coinValidator.disable();
+		for(BigDecimal denom : this.coinDenominations) {
+			this.station.coinDispensers.get(denom).disable();
+		}
+	}
+	
+	/**
+	 * Enables cash payment, which should be disabled by default.
+	 * This should be called by the CustomerIO when they select a payment
+	 * method. To do so, it simply enables all cash payment devices.
+	 */
+	public void enableCashPayment() {
+		this.disableCardPayment();
+		this.cardMethodSelected = null;
+		this.station.coinSlot.enable();
+		this.station.coinTray.enable();
+		this.station.coinStorage.enable();
+		this.station.coinValidator.enable();
+		for(BigDecimal denom : this.coinDenominations) {
+			this.station.coinDispensers.get(denom).enable();
+		}
+		for(int denom : this.denominations) {
+			this.station.billDispensers.get(denom).enable();
+		}
+		this.station.billInput.enable();
+		this.station.billOutput.enable();
+		this.station.billStorage.enable();
+		this.station.billValidator.enable();
+	}
+	
+	/**
+	 * Disabled cash payment.
+	 */
+	public void disableCashPayment() {
+		this.station.coinSlot.disable();
+		this.station.coinTray.disable();
+		this.station.coinStorage.disable();
+		this.station.coinValidator.disable();
+		for(BigDecimal denom : this.coinDenominations) {
+			this.station.coinDispensers.get(denom).disable();
+		}
 		for(int denom : this.denominations) {
 			this.station.billDispensers.get(denom).disable();
 		}
@@ -204,11 +315,42 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		this.station.billOutput.disable();
 		this.station.billStorage.disable();
 		this.station.billValidator.disable();
-		this.station.handheldScanner.disable();
-		this.station.mainScanner.disable();
-		this.station.printer.disable();
-		this.station.scale.disable();
 	}
+
+	/**
+	 * Sets the amount that the customer wishes to pay by card.
+	 */
+	public void setCardPaymentAmount(BigDecimal amount) {
+		this.amountToPayCard = amount;
+	}
+	
+	/**
+	 * This enables the card payments. As with cash payment method
+	 * above, this should be called when payment is selected, and
+	 * enables all necessary devices (just CardReader in this case).
+	 * This is Step 2 of Pay with Credit use-case.
+	 */
+	public void enableCardPayment(String method) {
+		this.cardMethodSelected = method;
+		this.disableCashPayment();
+		this.station.cardReader.enable(); 
+	}
+	
+	/**
+	 * Disable card payment.
+	 */
+	public void disableCardPayment() {
+		this.station.cardReader.disable();
+	}
+	
+	/**
+	 * Simulates connecting to the bank.
+	 */
+	public boolean connectToBank() {
+		return this.myBank.connectionStatus();
+	}
+	
+/* ------------------------ Cash Payment Methods ---------------------------------------------*/	
 	
 	/**
 	 * Dispenses change based on denominations. Looks through denominations in the 
@@ -216,18 +358,19 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 * first whether the denomination is appropriate (the largest bill smaller than the
 	 * change left) and then if the dispenser is empty or not. If both conditions are met, 
 	 * it dispenses. If not, it finds the next best denomination before dispensing.
-	 * (Step 7)
+	 * (Step 7). If the amount of change due cannot be dispensed by the bills, due to
+	 * either too small of change due or due to empty dispensers, it will call for
+	 * coins to be dispensed as change.
 	 */
-	public void dispenseChange() {
+	private void dispenseChange() {
+		BillDispenser dispenser;
 		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) == 0) {
 			throw new SimulationException(new Exception("This should never happen"));
 		}
-		/** If the changeDue is less than the lowest denom, call attendant automatically */
+		/** If the changeDue is less than the lowest denom, dispense coins */
 		else if(this.getChangeDue().compareTo(this.minDenom) == -1) {
-			this.myAttendant.changeRemainsNoDenom(this.getChangeDue());
-			/** No need to suspend machine, nothing is empty its just a lack of denoms */
+			this.dispenseCoins();
 		}
-		BillDispenser dispenser;
 		/** Go through denominations backwards, largest to smallest */
 		for(int index = this.denominations.length-1 ; index >= 0 ; index--) {
 			dispenser = this.dispensers.get(this.denominations[index]);
@@ -237,9 +380,49 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 					dispenser.emit();
 					index++;
 				}
-				/** If empty and not the smallest denom, move on. If the smallest denom, inform attendant */
+				/** If empty and not the smallest denom, move on. If the smallest denom, dispense coins */
 				catch(EmptyException e) {
 					if(BigDecimal.valueOf(this.denominations[index]).compareTo(this.minDenom) == 0) {
+						/** In this case change will be larger than smallest denom but unpayable through bills */
+						this.dispenseCoins();
+						break;
+					}
+					else {
+						continue;
+					}
+				}
+				catch(Exception e) {
+					break;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Dispenses change based on denominations in the form of coins. If unable
+	 * to do so, it will inform the attendant because 
+	 */	
+	private void dispenseCoins() {
+		CoinDispenser dispenser;
+		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) == 0) {
+			throw new SimulationException(new Exception("This should never happen"));
+		}
+		else if(this.getChangeDue().compareTo(this.minCoinDenom) == -1) {
+			this.myAttendant.changeRemainsNoDenom(this.getChangeDue());
+			/** No need to suspend machine, nothing is empty its just a lack of denoms */
+		}
+		/** Go through denominations backwards, largest to smallest */
+		for(int index = this.coinDenominations.size()-1 ; index >= 0 ; index--) {
+			dispenser = this.coinDispensers.get(this.coinDenominations.get(index));
+			/** If the value of the coin is less than or equal to the change and change is payable */
+			if(this.coinDenominations.get(index).compareTo(this.getChangeDue()) <= 0) {
+				try {
+					dispenser.emit();
+					index++;
+				}
+				/** If empty and not the smallest denom, move on. If the smallest denom, inform attendant */
+				catch(EmptyException e) {
+					if(this.coinDenominations.get(index).compareTo(this.minCoinDenom) == 0) {
 						/** In this case change will be larger than smallest denom but unpayable */
 						this.myAttendant.changeRemainsNoDenom(this.getChangeDue());
 						this.suspendMachine();
@@ -250,9 +433,8 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 					}
 				}
 				catch(Exception e) {
-					e.printStackTrace();
-					// Unspecified functionality
-				}
+					break;
+				}				
 			}
 		}
 	}
@@ -261,24 +443,129 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 * Subtracts value from the cart based on the value of the bill
 	 * added. (Step 2, Step 3, Step 5, Step 6)
 	 */
-	public void payBill(BigDecimal billValue) {
-		this.updateAmountPaid(billValue);
-		this.setCartTotal(this.getCartTotal().subtract(billValue));
+	public void payCash(BigDecimal cashValue) {
+		this.updateAmountPaid(cashValue);
+		this.setCartTotal(this.getCartTotal().subtract(cashValue));
 		myCustomer.showUpdatedTotal(this.getCartTotal());
 		/** If the customer has paid their cart, check for change */
 		if(this.getCartTotal().compareTo(BigDecimal.valueOf(0.0)) <= 0) {
 			this.setChangeDue(BigDecimal.valueOf(0.0).subtract(this.getCartTotal()));
 			this.setTotalChange(this.getChangeDue());
 			this.setCartTotal(BigDecimal.valueOf(0.0)); //Set cart total after change has been calculated.
-			if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0) {
+			/** this.suspend should never be true here */
+			if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
 				this.dispenseChange();
 			}
-			else {
+			/** this.suspend should never be true here */
+			else if(this.suspended == false) {
 				this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 			}
 		}
 	}
 	
+/* ------------------------ Pay with Credit --------------------------------------------------*/
+	// implements the pay with credit use case. trigger: customer must with to pay with credit
+	public void payCredit(CardReader reader, CardData data) {
+		int creditHoldNumber;
+		Boolean transactionCompleted = false;;
+		if(!this.connectToBank()) { // Exception 1
+			myCustomer.transactionFailure();
+			reader.remove();
+		}
+		else {
+			creditHoldNumber = this.myBank.creditCardTransaction(data, this.amountToPayCard);
+			if(creditHoldNumber != 0) { // 0 indicates non-authorized
+				int tries = 0;
+				while(tries < 5) { // Exception 3
+					if(!this.connectToBank()) {
+						tries++;
+						try {	
+							TimeUnit.SECONDS.sleep(20);
+						} catch(Exception exc) {}
+					}
+					else {
+						myBank.completeTransaction(creditHoldNumber);
+						transactionCompleted = true;
+						break;
+					}
+				}
+				if(transactionCompleted) {
+					this.updateAmountPaid(this.amountToPayCard);
+					this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
+					reader.remove();
+					myCustomer.payWithCreditComplete(this.amountToPayCard);
+					this.amountToPayCard = BigDecimal.ZERO; // Reset
+				}
+				else {
+					myBank.releaseHold(data);
+				}
+			}
+			else {
+				myCustomer.transactionFailure();
+				reader.remove();
+			}
+		}
+	}
+	// This is being kept separate from payCredit despite having the same logic simply so that
+	// future edits can be made to differentiate them without ruining everything.
+	public void payDebit(CardReader reader, CardData data) {
+		int debitHoldNumber;
+		Boolean transactionCompleted = false;;
+		if(!this.connectToBank()) { // Exception 1
+			myCustomer.transactionFailure();
+			reader.remove();
+		}
+		else {
+			debitHoldNumber = this.myBank.debitCardTransaction(data, this.amountToPayCard);
+			if(debitHoldNumber != 0) { // 0 indicates non-authorized
+				int tries = 0;
+				while(tries < 5) { // Exception 3
+					if(!this.connectToBank()) {
+						tries++;
+						try {	
+							TimeUnit.SECONDS.sleep(20);
+						} catch(Exception exc) {}
+					}
+					else {
+						myBank.completeTransaction(debitHoldNumber);
+						transactionCompleted = true;
+						break;
+					}
+				}
+				if(transactionCompleted) {
+					this.updateAmountPaid(this.amountToPayCard);
+					this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
+					reader.remove();
+					myCustomer.payWithDebitComplete(this.amountToPayCard);
+					this.amountToPayCard = BigDecimal.ZERO; // Reset
+				}
+				else {
+					myBank.releaseHold(data);
+				}
+			}
+			else {
+				myCustomer.transactionFailure();
+				reader.remove();
+			}
+		}
+	}
+	
+	// Notifies the bank that the specified card should be blocked.
+	public void blockCardAtBank(Card card) {
+		int counter = 0;
+		while(counter < 10)
+			if(!this.connectToBank()) {
+				counter++;
+			}
+			else {
+				myBank.blockCard(card);
+				break;
+			}
+	}
+	
+/* ------------------------ Observer Overrides -----------------------------------------------*/
+	
+	/* ---------------- Abstract --------------------------------*/
 	@Override
 	public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
 		// Ignoring in this iteration
@@ -291,6 +578,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		
 	}
 
+	/* ---------------- Bill Validator -------------------*/
 	/**
 	 * Making this observer call the payment method. This makes sense, as it is the only input
 	 * observer that actually has the bill and its value, and it only makes sense that payment
@@ -298,7 +586,7 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	 */
 	@Override
 	public void reactToValidBillDetectedEvent(BillValidator validator, Currency currency, int value) {
-		this.payBill(BigDecimal.valueOf(value));
+		this.payCash(BigDecimal.valueOf(value));
 	}
 
 	@Override
@@ -306,14 +594,31 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		// Ignoring in this iteration
 	}
 
+	/* ---------------- Bill Dispenser -------------------*/
 	@Override
 	public void reactToBillsFullEvent(BillDispenser dispenser) {
 		// Ignoring in this iteration
 	}
-
+	
+	/**
+	 * This does the same thing as reactToBillRemovedEvent, just in the case that
+	 * the dispenser becomes empty. Change is still updated, just in a bit of a 
+	 * roundabout way.
+	 */
 	@Override
 	public void reactToBillsEmptyEvent(BillDispenser dispenser) {
-		// Ignoring in this iteration
+		for(int denom : this.denominations) {
+			if(this.dispensers.get(denom).equals(dispenser)) {
+				this.setChangeDue(this.getChangeDue().subtract(BigDecimal.valueOf(denom)));
+				/** this.suspend should never be true here */
+				if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
+				}
+				/** this.suspend should never be true here */
+				else if(this.suspended == false) {
+					this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
+				}
+			}
+		}
 	}
 
 	@Override
@@ -332,10 +637,12 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 	@Override
 	public void reactToBillRemovedEvent(BillDispenser dispenser, Bill bill) {
 		this.setChangeDue(this.getChangeDue().subtract(BigDecimal.valueOf(bill.getValue())));
-		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0) {
+		/** this.suspend should never be true here */
+		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
 			this.dispenseChange();
 		}
-		else {
+		/** this.suspend should never be true here */
+		else if(this.suspended == false) {
 			this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
 		}
 	}
@@ -350,9 +657,10 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 		// Ignoring in this iteration
 	}
 
+	/* ---------------- BillSlot ------------------------*/
 	@Override
 	public void reactToBillInsertedEvent(BillSlot slot) {
-		// TODO Auto-generated method stub	
+		// Ignoring in this iteration	
 	}
 
 	/**
@@ -366,6 +674,115 @@ public class PaymentControllerLogic implements BillValidatorObserver, BillDispen
 
 	@Override
 	public void reactToBillRemovedEvent(BillSlot slot) {
-		// TODO Auto-generated method stub
+		// Ignoring in this iteration
+	}
+
+	/* ---------------- Coin Dispenser ------------------*/	
+	@Override
+	public void reactToCoinsFullEvent(CoinDispenser dispenser) {
+		// Ignoring in this iteration
+		
+	}
+
+	@Override
+	public void reactToCoinsEmptyEvent(CoinDispenser dispenser) {
+		// Ignoring in this iteration
+		
+	}
+
+	@Override
+	public void reactToCoinAddedEvent(CoinDispenser dispenser, Coin coin) {
+		// Ignoring in this iteration
+		
+	}
+
+	/**
+	 * When a coin has been successfully removed, adjust the change
+	 * accordingly. Basically functions identically to the equivalent
+	 * BillDispenserObserver method that I have implemented above.
+	 */
+	@Override
+	public void reactToCoinRemovedEvent(CoinDispenser dispenser, Coin coin) {
+		this.setChangeDue(this.getChangeDue().subtract(coin.getValue()));
+		if(this.getChangeDue().compareTo(BigDecimal.valueOf(0.0)) > 0 && this.suspended == false) {
+			this.dispenseChange();
+		}
+		else if(this.suspended == false) {
+			this.printerLogic.print(this.itemNameList,this.itemCostList,this.getTotalChange(),this.getAmountPaid());
+		}
+	}
+
+	@Override
+	public void reactToCoinsLoadedEvent(CoinDispenser dispenser, Coin... coins) {
+		// Ignoring in this iteration
+		
+	}
+
+	@Override
+	public void reactToCoinsUnloadedEvent(CoinDispenser dispenser, Coin... coins) {
+		// Ignoring in this iteration
+		
+	}
+
+	/* ---------------- Coin Tray -----------------------*/
+	/**
+	 * When a coin is deposited to the tray, the customer should remove,
+	 * or at least think about removing, the coin. This is the only way
+	 * tray overload will be managed, as there is no specific documentation
+	 * on what should be done to prevent overflow or in the case of overflow.
+	 */
+	@Override
+	public void reactToCoinAddedEvent(CoinTray tray) {
+		myCustomer.removeCoin(tray);
+	}
+
+	/* ---------------- Coin Validator ------------------*/
+	/**
+	 * When a valid coin is detected, make the payment. This is basically
+	 * the same as the BillValidatorObserver method implemented above, just
+	 * for coins.
+	 */
+	@Override
+	public void reactToValidCoinDetectedEvent(CoinValidator validator, BigDecimal value) {
+		this.payCash(value);
+	}
+
+	@Override
+	public void reactToInvalidCoinDetectedEvent(CoinValidator validator) {
+		// Ignoring in this iteration
+		
+	}
+	/* ---------------- Card Reader --------------------*/
+	@Override
+	public void reactToCardInsertedEvent(CardReader reader) {
+		// Ignoring in this iteration
+	}
+	
+	@Override
+	public void reactToCardRemovedEvent(CardReader reader) {
+		
+	}
+	
+	@Override
+	public void reactToCardTappedEvent(CardReader reader) {
+		
+	}
+	
+	@Override
+	public void reactToCardSwipedEvent(CardReader reader) {
+		
+	}
+
+	@Override
+	public void reactToCardDataReadEvent(CardReader reader, CardData data) {
+		if(data.getType().equals("Credit") && this.cardMethodSelected.equals("Credit")) {
+			this.payCredit(reader, data);
+		}
+		else if(data.getType().equals("Debit") && this.cardMethodSelected.equals("Debit")) {
+			this.payDebit(reader, data);;
+		}
+		else {
+			this.cardReader.remove();
+		}
 	}
 }
