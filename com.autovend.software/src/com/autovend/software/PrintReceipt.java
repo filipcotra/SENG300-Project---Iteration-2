@@ -12,7 +12,6 @@ package com.autovend.software;
 import java.util.ArrayList;
 
 import com.autovend.devices.AbstractDevice;
-import com.autovend.devices.OverloadException;
 import com.autovend.devices.ReceiptPrinter;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.devices.observers.AbstractDeviceObserver;
