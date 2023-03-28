@@ -50,7 +50,7 @@ public class AddOwnBagsTest {
 	@Override
 	public void checkAddedOwnBags() {
 		bag.blockSystem();
-		acceptOwnBags();
+		this.acceptOwnBags();
 	}
 
 	@Override
@@ -60,7 +60,7 @@ public class AddOwnBagsTest {
 			bag.ownBags = true;
 		}
 		else {
-			throw new DisabledException();
+			bag.ownBags = false;
 		}
 		customer.indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags();
 	}
@@ -164,13 +164,8 @@ public class AddOwnBagsTest {
 		}
 		
 		@Override
-		public void selectAddOwnBags(){
-			bag.selectAddOwnBags();
-		}
-		
-		@Override
-		public void indicateAddOwnBags() {
-			wasCustomerIndicatedToUseOwnBags = true;
+		public boolean selectAddOwnBags(){
+			return bag.addOwnBags();
 		}
 		
 		@Override
@@ -207,20 +202,15 @@ public void tearDown() {
 @Test
 public void bagsAccepted() {
 	bag.bagAccept = true;
-	assertTrue(bag.addOwnBags());
+	assertTrue(customer.selectAddOwnBags());
 	assertTrue(bag.ownBags);
 }
 
 	@Test ()
 	public void bagsReject() {
 		bag.bagAccept = false;
-		try {
-			boolean accepted = bag.addOwnBags();
-		}
-		catch(DisabledException de) {
-			return;
-		}
-		fail("DisabledException expected");
+		assertFalse(customer.selectAddOwnBags());
+		assertFalse(bag.ownBags);
 	}
 	
 
@@ -252,15 +242,9 @@ public void bagsAccepted() {
 	}
 	
 	@Test
-	public void wasCustomerIndicatedToUseOwnBagsTest() {
-		customer.selectAddOwnBags();
-		assertTrue(wasCustomerIndicatedToUseOwnBags);
-	}
-	
-	@Test
 	public void wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags() {
 		bag.bagAccept = true;
-		attendantIO.checkAddedOwnBags();
+		customer.selectAddOwnBags();
 		assertTrue(wasCustomerIndicatedToContinueAfterAttendantApproveOrDenyAddedBags);
 	}
 	

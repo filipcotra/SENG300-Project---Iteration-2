@@ -114,12 +114,7 @@ public interface CustomerIO {
 	/**
 	 * Simulates the customer selecting to use their own bags
 	 */
-	public void selectAddOwnBags();
-	
-	/**
-	 * Simulates the customer being indicated/notified to add their own bags to bagging area
-	 */
-	public void indicateAddOwnBags();
+	public boolean selectAddOwnBags();
 	
 	/**
 	 * Simulates the customer being indicated/notified to contine after an attendant either approved or denied them from adding bags to bagging area

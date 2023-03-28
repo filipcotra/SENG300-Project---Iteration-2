@@ -217,13 +217,9 @@ public class WeightDiscrepancyTest {
 		}
 		
 		@Override
-		public void selectAddOwnBags() {
+		public boolean selectAddOwnBags() {
 			// TODO Auto-generated method stub
-		}
-		
-		@Override
-		public void indicateAddOwnBags() {
-			// TODO Auto-generated method stub
+			return true;
 		}
 		
 		@Override

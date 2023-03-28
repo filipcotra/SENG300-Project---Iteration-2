@@ -104,12 +104,8 @@ public class AddItemByScanningTest {
 		}
 		
 		@Override
-		public void selectAddOwnBags() {
-			// TODO Auto-generated method stub
-		}
-		
-		@Override
-		public void indicateAddOwnBags() {
+		public boolean selectAddOwnBags() {
+			return true;
 			// TODO Auto-generated method stub
 		}
 		

@@ -174,10 +174,11 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	
 	public boolean addOwnBags() {
 			attendantIO.checkAddedOwnBags();
-			return true;
-	}
-
-	public void selectAddOwnBags() {
-		customerIO.indicateAddOwnBags();
+			if (this.ownBags == true) {
+				return true;
+			}
+			else {
+				return false;
+			}
 	}
 }
