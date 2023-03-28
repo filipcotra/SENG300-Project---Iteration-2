@@ -35,7 +35,6 @@ public class AddOwnBagsTest {
 	SelfCheckoutStation station;
 	AttendantIO attendantIO;
 	CustomerIO customer;
-	BankIO bank;
 	PaymentControllerLogic paymentController;
 	PrintReceipt pr;
 	BaggingAreaController bag;
@@ -229,49 +228,11 @@ public class AddOwnBagsTest {
 		public void insertCard(Card card, String pin) {
 			// TODO Auto-generated method stub
 		}
-	}
-	
-class MyBankIO implements BankIO{
 		
-		// hold number passed to and from bank before releasing funds on authorized transactions
-		public int holdNumber;
-
 		@Override
-		public void completeTransaction(int holdNumber) {
+		public void removeCard(CardReader reader) {
 			// TODO Auto-generated method stub
-			
-		}
-
-		// Track if card is to be blocked
-		@Override
-		public void blockCard(Card card) {
-		}
-
-		// Set test hold number to indicate that there is a hold for credit payment
-		@Override
-		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
-			return this.holdNumber = 1;
-		}
-
-		// Set test hold number to indicate that there is a hold for debit payment
-		@Override
-		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
-			return this.holdNumber = 1;
-		}
-
-		// Set test hold number to indicate that the hold has been released
-		@Override
-		public void releaseHold(CardData data) {
-			this.holdNumber = 0;
-			
-		}
-
-		// Confirm if the connection to the bank has been successfully made
-		@Override
-		public boolean connectionStatus() {
-			return true;
-		}
-		
+		}	
 	}
 
 
@@ -281,9 +242,8 @@ public void setup() {
 			new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 	attendantIO = new myAttendantIO();
 	customer = new myCustomerIO();
-	bank = new MyBankIO();
 	pr = new PrintReceipt(station, station.printer, customer, attendantIO);
-	paymentController = new PaymentControllerLogic(station, customer, attendantIO, bank, pr);
+	paymentController = new PaymentControllerLogic(station, customer, attendantIO, pr);
 	bag = new BaggingAreaController(station, customer, attendantIO, paymentController);
 }
 

@@ -31,6 +31,7 @@ import org.junit.Test;
 import com.autovend.BarcodedUnit;
 import com.autovend.Card;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.OverloadException;
 import com.autovend.devices.SelfCheckoutStation;
@@ -198,6 +199,11 @@ public class ReceiptPrinterTest {
 				// TODO Auto-generated method stub
 				
 			}
+			
+			@Override
+			public void removeCard(CardReader reader) {
+				// TODO Auto-generated method stub
+			}	
 		
 		}
 		

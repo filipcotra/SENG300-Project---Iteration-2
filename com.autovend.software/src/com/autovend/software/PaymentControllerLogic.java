@@ -52,6 +52,7 @@ import com.autovend.devices.observers.BillValidatorObserver;
 import com.autovend.devices.observers.CoinDispenserObserver;
 import com.autovend.devices.observers.CoinTrayObserver;
 import com.autovend.devices.observers.CoinValidatorObserver;
+import com.autovend.external.CardIssuer;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
 import com.autovend.devices.observers.BillStorageObserver;
@@ -89,7 +90,9 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	private BillSlot input;
 	private Boolean suspended;
 	private BigDecimal amountToPayCard; // The customer should indicate this
-	private BankIO myBank;
+	private CardIssuer creditBank;
+	private CardIssuer debitBank;
+	private CardIssuer activeBank;
 	private CardReader cardReader;
 	String cardMethodSelected;
 	
@@ -107,7 +110,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	 * @param attendant
 	 * 		AttendantIO interface that is monitoring the machine
 	 */
-	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, BankIO bank, PrintReceipt printerLogic) {
+	public PaymentControllerLogic(SelfCheckoutStation SCS, CustomerIO customer, AttendantIO attendant, PrintReceipt printerLogic) {
 		this.station = SCS;
 		this.station.billValidator.register(this);
 		this.station.coinValidator.register(this);
@@ -140,7 +143,6 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 		this.output.register(this);
 		this.input.register(this);
 		this.suspended = false;
-		this.myBank = bank;
 		this.amountToPayCard = BigDecimal.ZERO; // By default
 		this.cardReader = station.cardReader;
 		this.cardReader.register(this);
@@ -346,8 +348,22 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	/**
 	 * Simulates connecting to the bank.
 	 */
-	public boolean connectToBank() {
-		return this.myBank.connectionStatus();
+	public boolean connectToBank(CardIssuer bank) {
+		this.activeBank = bank;
+		if(this.activeBank != null) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+	/**
+	 * Sets credit and debit banks
+	 */
+	public void setBanks(CardIssuer creditBank, CardIssuer debitBank) {
+		this.creditBank = creditBank;
+		this.debitBank = debitBank;
 	}
 	
 /* ------------------------ Cash Payment Methods ---------------------------------------------*/	
@@ -468,23 +484,23 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	public void payCredit(CardReader reader, CardData data) {
 		int creditHoldNumber;
 		Boolean transactionCompleted = false;;
-		if(!this.connectToBank()) { // Exception 1
+		if(!this.connectToBank(this.creditBank)) { // Exception 2
 			myCustomer.transactionFailure();
-			reader.remove();
+			myCustomer.removeCard(reader);
 		}
 		else {
-			creditHoldNumber = this.myBank.creditCardTransaction(data, this.amountToPayCard);
-			if(creditHoldNumber != 0) { // 0 indicates non-authorized
+			creditHoldNumber = activeBank.authorizeHold(data.getNumber(), this.amountToPayCard);
+			if(creditHoldNumber != -1) { // -1 indicates non-authorized
 				int tries = 0;
 				while(tries < 5) { // Exception 3
-					if(!this.connectToBank()) {
+					if(!this.connectToBank(this.creditBank)) {
 						tries++;
 						try {	
 							TimeUnit.SECONDS.sleep(20);
 						} catch(Exception exc) {}
 					}
 					else {
-						myBank.completeTransaction(creditHoldNumber);
+						activeBank.postTransaction(data.getNumber(), creditHoldNumber, this.amountToPayCard);
 						transactionCompleted = true;
 						break;
 					}
@@ -492,17 +508,17 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 				if(transactionCompleted) {
 					this.updateAmountPaid(this.amountToPayCard);
 					this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
-					reader.remove();
+					myCustomer.removeCard(reader);
 					myCustomer.payWithCreditComplete(this.amountToPayCard);
 					this.amountToPayCard = BigDecimal.ZERO; // Reset
 				}
 				else {
-					myBank.releaseHold(data);
+					activeBank.releaseHold(data.getNumber(),creditHoldNumber);
 				}
 			}
 			else {
 				myCustomer.transactionFailure();
-				reader.remove();
+				myCustomer.removeCard(reader);
 			}
 		}
 	}
@@ -511,23 +527,23 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 	public void payDebit(CardReader reader, CardData data) {
 		int debitHoldNumber;
 		Boolean transactionCompleted = false;;
-		if(!this.connectToBank()) { // Exception 1
+		if(!this.connectToBank(this.debitBank)) { // Exception 2
 			myCustomer.transactionFailure();
-			reader.remove();
+			myCustomer.removeCard(reader);
 		}
 		else {
-			debitHoldNumber = this.myBank.debitCardTransaction(data, this.amountToPayCard);
-			if(debitHoldNumber != 0) { // 0 indicates non-authorized
+			debitHoldNumber = activeBank.authorizeHold(data.getNumber(), this.amountToPayCard);
+			if(debitHoldNumber != -1) { // -1 indicates non-authorized
 				int tries = 0;
 				while(tries < 5) { // Exception 3
-					if(!this.connectToBank()) {
+					if(!this.connectToBank(this.debitBank)) {
 						tries++;
 						try {	
 							TimeUnit.SECONDS.sleep(20);
 						} catch(Exception exc) {}
 					}
 					else {
-						myBank.completeTransaction(debitHoldNumber);
+						activeBank.postTransaction(data.getNumber(), debitHoldNumber, this.amountToPayCard);
 						transactionCompleted = true;
 						break;
 					}
@@ -535,32 +551,40 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 				if(transactionCompleted) {
 					this.updateAmountPaid(this.amountToPayCard);
 					this.setCartTotal(this.getCartTotal().subtract(this.amountToPayCard));
-					reader.remove();
+					myCustomer.removeCard(reader);
 					myCustomer.payWithDebitComplete(this.amountToPayCard);
 					this.amountToPayCard = BigDecimal.ZERO; // Reset
 				}
 				else {
-					myBank.releaseHold(data);
+					activeBank.releaseHold(data.getNumber(),debitHoldNumber);
 				}
 			}
 			else {
 				myCustomer.transactionFailure();
-				reader.remove();
+				myCustomer.removeCard(reader);
 			}
 		}
 	}
 	
 	// Notifies the bank that the specified card should be blocked.
-	public void blockCardAtBank(Card card) {
+	public void blockCardAtBank(CardData card) {
+		CardIssuer attemptToConnect = null;
 		int counter = 0;
-		while(counter < 10)
-			if(!this.connectToBank()) {
+		if(card.getType().equals("Credit")) {
+			attemptToConnect = this.creditBank;
+		}
+		else if(card.getType().equals("Debit")) {
+			attemptToConnect = this.debitBank;
+		}
+		while(counter < 10) {
+			if(!this.connectToBank(attemptToConnect)) {
 				counter++;
 			}
 			else {
-				myBank.blockCard(card);
+				activeBank.block(card.getNumber());
 				break;
 			}
+		}
 	}
 	
 /* ------------------------ Observer Overrides -----------------------------------------------*/
@@ -782,7 +806,7 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 			this.payDebit(reader, data);;
 		}
 		else {
-			this.cardReader.remove();
+			myCustomer.removeCard(reader);
 		}
 	}
 }

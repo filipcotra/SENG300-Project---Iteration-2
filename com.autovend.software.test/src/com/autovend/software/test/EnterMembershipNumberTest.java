@@ -28,6 +28,7 @@ import org.junit.*;
 import com.autovend.BarcodedUnit;
 import com.autovend.Card;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.software.AttendantIO;
@@ -177,6 +178,11 @@ public class EnterMembershipNumberTest {
 		public void insertCard(Card card, String pin) {
 			// TODO Auto-generated method stub
 		}
+		
+		@Override
+		public void removeCard(CardReader reader) {
+			// TODO Auto-generated method stub
+		}	
 		
 	}
 	

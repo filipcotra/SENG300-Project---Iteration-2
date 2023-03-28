@@ -49,6 +49,7 @@ import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
 import com.autovend.devices.BillValidator;
+import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinDispenser;
 import com.autovend.devices.CoinSlot;
 import com.autovend.devices.CoinTray;
@@ -66,7 +67,6 @@ import com.autovend.devices.observers.CoinSlotObserver;
 import com.autovend.devices.observers.CoinTrayObserver;
 import com.autovend.devices.observers.CoinValidatorObserver;
 import com.autovend.software.AttendantIO;
-import com.autovend.software.BankIO;
 import com.autovend.software.CustomerIO;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
@@ -82,7 +82,6 @@ public class PaymentWithCashTest {
 	MyCoinTrayObserver coinTrayObserver;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
-	BankIO bank;
 	Bill[] fiveDollarBills;
 	Bill[] tenDollarBills;
 	Bill[] twentyDollarBills;
@@ -437,6 +436,11 @@ public class PaymentWithCashTest {
 			
 		}
 	
+		@Override
+		public void removeCard(CardReader reader) {
+			// TODO Auto-generated method stub
+		}	
+		
 	}
 	
 	class MyAttendantIO implements AttendantIO {
@@ -489,46 +493,6 @@ public class PaymentWithCashTest {
 
 			}
 	}
-	
-	class MyBankIO implements BankIO {
-
-		@Override
-		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
-			// TODO Auto-generated method stub
-			return 0;
-		}
-
-		@Override
-		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
-			// TODO Auto-generated method stub
-			return 0;
-		}
-
-		@Override
-		public void completeTransaction(int holdNumber) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-		@Override
-		public void releaseHold(CardData data) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void blockCard(Card card) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public boolean connectionStatus() {
-			// TODO Auto-generated method stub
-			return false;
-		}
-
-}
 	
 	class MyBillSlotObserver implements BillSlotObserver{
 
@@ -647,7 +611,6 @@ public class PaymentWithCashTest {
 						new BigDecimal("1.00"), new BigDecimal("2.00")}, 10000, 5);
 		customer = new MyCustomerIO();
 		attendant = new MyAttendantIO();
-		bank = new MyBankIO();
 		ejectedBills = new ArrayList<Integer>();
 		ejectedCoins = new ArrayList<BigDecimal>();
 		/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
@@ -694,7 +657,7 @@ public class PaymentWithCashTest {
 			e.printStackTrace();
 		}
 		receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
+		paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
 		paymentController.setCartTotal(BigDecimal.ZERO);
 		coinFalseNegative = true;
 		billFalseNegative = true;

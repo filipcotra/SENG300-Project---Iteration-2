@@ -39,6 +39,7 @@ import com.autovend.Card.CardData;
 import com.autovend.devices.AbstractDevice;
 import com.autovend.devices.BillDispenser;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinTray;
 import com.autovend.devices.DisabledException;
 import com.autovend.devices.OverloadException;
@@ -51,8 +52,6 @@ import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
 import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
-
-import com.autovend.software.BankIO;
 
 import com.autovend.software.BaggingAreaController;
 
@@ -74,7 +73,6 @@ public class AllTogether {
 	MyBillSlotObserver billObserver;
 	MyCustomerIO customer;
 	MyAttendantIO attendant;
-	MyBankIO bank;
 	Bill[] fiveDollarBills;
 	Bill[] tenDollarBills;
 	Bill[] twentyDollarBills;
@@ -146,7 +144,6 @@ class MyCustomerIO implements CustomerIO {
 		
 	}
 
-
 	@Override
 	public void removeCoin(CoinTray tray) {
 	}
@@ -208,7 +205,12 @@ class MyCustomerIO implements CustomerIO {
 	@Override
 
 	public void selectPaymentMethod(String paymentMethod, PaymentControllerLogic instance) {
-		
+		if (paymentMethod.equals("Cash")) {
+			instance.enableCashPayment();
+		}
+		else if(paymentMethod.equals("Credit") || paymentMethod.equals("Debit")) {
+			instance.enableCardPayment(paymentMethod);
+		}
 	}
 
 	public void signalReadyForInteraction() {
@@ -252,7 +254,12 @@ class MyCustomerIO implements CustomerIO {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void removeCard(CardReader reader) {
+		reader.remove();
 		
+	}	
 		
 	}
 	
@@ -307,44 +314,6 @@ class MyCustomerIO implements CustomerIO {
 		
 	}
 	
-	class MyBankIO implements BankIO {
-
-		@Override
-		public int creditCardTransaction(CardData card, BigDecimal amountPaid) {
-			// TODO Auto-generated method stub
-			return 0;
-		}
-
-		@Override
-		public int debitCardTransaction(CardData card, BigDecimal amountPaid) {
-			// TODO Auto-generated method stub
-			return 0;
-		}
-
-		@Override
-		public void completeTransaction(int holdNumber) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-		@Override
-		public void releaseHold(CardData data) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void blockCard(Card card) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public boolean connectionStatus() {
-			// TODO Auto-generated method stub
-			return false;
-		}
-	}
 	@Before
 	public void setup() {
 		// Setting up new print stream to catch printed output, used to test terminal output
@@ -360,7 +329,6 @@ class MyCustomerIO implements CustomerIO {
 						new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 				customer = new MyCustomerIO();
 				attendant = new MyAttendantIO();
-				bank = new MyBankIO();
 				ejectedBills = new ArrayList<Integer>();		
 				/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
 				 * Every dispenser has a max capacity of 100 
@@ -419,10 +387,10 @@ class MyCustomerIO implements CustomerIO {
 				
 				// Create and attach controllers to the station:
 				this.receiptPrinterController = new PrintReceipt(selfCheckoutStation, selfCheckoutStation.printer, customer, attendant);
-				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
-				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, bank, receiptPrinterController);
+				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, receiptPrinterController);
 				this.baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
 				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController, baggingAreaController);
+				receiptPrinterController.setContents(1024, 1024);
 
 	}
 	/* 
@@ -473,6 +441,7 @@ class MyCustomerIO implements CustomerIO {
 	 */
 	@Test
 	public void payForCartTotalWithChange() {
+		customer.selectPaymentMethod("Cash", paymentController);
 		// scan first item
 		customer.scanItem(scannedItem1);
 		customer.placeScannedItemInBaggingArea(placedItem1);
@@ -500,17 +469,17 @@ class MyCustomerIO implements CustomerIO {
 	 */
 	@Test
 	public void addPayAddPay() {
+		customer.selectPaymentMethod("Cash", paymentController);
 		// scan first item
 		customer.scanItem(scannedItem4);
 		customer.placeScannedItemInBaggingArea(placedItem4);
 		try {
-			
+			this.selfCheckoutStation.billInput.accept(billTwenty);
 		} catch (Exception e) {fail();}
 		// scan second item
 		customer.scanItem(scannedItem1);
 		customer.placeScannedItemInBaggingArea(placedItem1);
 		try {
-			this.selfCheckoutStation.billInput.accept(billTwenty);
 			this.selfCheckoutStation.billInput.accept(billTwenty);
 		} catch (Exception e) {fail();}
 	assertEquals(	  

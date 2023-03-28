@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import com.autovend.BarcodedUnit;
 import com.autovend.Card;
 import com.autovend.devices.BillSlot;
+import com.autovend.devices.CardReader;
 import com.autovend.devices.CoinTray;
 
 /**
@@ -167,5 +168,10 @@ public interface CustomerIO {
 	 * Simulates the customer being indicated/notified to contine after an attendant either approved or denied them from adding bags to bagging area
 	 */
 	public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags();
+
+	/**
+	 * Simulates the customer being notified to, and then removing their card from the card reader.
+	 */
+	public void removeCard(CardReader reader);
 
 }
