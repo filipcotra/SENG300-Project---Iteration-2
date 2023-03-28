@@ -312,24 +312,51 @@ public class PaymentWithCashTest {
 			
 		}
 
+
 		// Allow customer to remove coins from tray
 		@Override
 		public void removeCoin(CoinTray tray) {
 			tray.collectCoins();
+
+		@Override
+		public void notifyWeightDiscrepancyCustomerIO() {
+			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
+		public void notifyWeightDiscrepancyApprovedCustomerIO() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void signalPurchaseBags(int quantity) {
+			// TODO Auto-generated method stub
+
+			
+		}
+
+		@Override
+
 		public void payWithCreditComplete(BigDecimal amountDue) {
+
+		public void signalFinishedPurchasingBags() {
+
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
+
 		public void payWithDebitComplete(BigDecimal amountDue) {
+
+		public void signalReadyForInteraction() {
+
 			// TODO Auto-generated method stub
 			
 		}
+
 
 		// Allow customer to choose their choice of payment method, enabling the required
 		// hardware components depending on the selected method
@@ -351,12 +378,44 @@ public class PaymentWithCashTest {
 
 		@Override
 		public void transactionFailure() {
+
+		@Override
+		public void signalPutPurchasedBagsOnBaggingArea() {
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
+		public String getMembershipNumber() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean cancelMembershipInput() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void notifyBadMembershipNumberCustomerIO() {
+
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+
 		public void insertCard(Card card, String pin) {
+
+		public boolean selectAddOwnBags() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void indicateToCustomerToContinueAfterAttendantApproveOrDenyAddedBags() {
+
 			// TODO Auto-generated method stub
 			
 		}
@@ -364,12 +423,6 @@ public class PaymentWithCashTest {
 	}
 	
 	class MyAttendantIO implements AttendantIO {
-
-			@Override
-			public boolean approveWeightDiscrepancy() {
-				// TODO Auto-generated method stub
-				return false;
-			}
 
 			@Override
 			public void printDuplicateReceipt() {
@@ -382,6 +435,40 @@ public class PaymentWithCashTest {
 				System.out.print("changeRemainsNoDenom Called: " + changeLeft);
 				attendantSignalled = true;
 				
+			}
+
+			@Override
+
+			public void notifyWeightDiscrepancyAttendantIO() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void approveWeightDiscrepancy(CustomerIO customerIO) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void checkAddedOwnBags() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void acceptOwnBags() {
+				// TODO Auto-generated method stub
+				
+
+			public void acknowledgeLowInk() {
+				// TODO Auto-generated method stub
+			}
+
+			@Override
+			public void acknowledgeLowPaper() {
+				// TODO Auto-generated method stub
+
 			}
 	}
 	
