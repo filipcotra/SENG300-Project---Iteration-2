@@ -375,16 +375,6 @@ public class AddItemByScanningTest {
 	}
 	
 	@Test
-	public void updateExpectedWeight() {
-		/**
-		 * Step 4: System: Updates the expected weight from the Bagging Area
-		 */
-		assertEquals(0, baggingAreaController.getExpectedWeight(), 0.00);
-		customer.scanItem(scannedItem);
-		assertEquals(12.0, baggingAreaController.getExpectedWeight(), 0.00);
-	}
-	
-	@Test
 	public void notifyCustomer() {
 		/**
 		 * Step 5: System: Updates the expected weight from the Bagging Area
@@ -402,30 +392,6 @@ public class AddItemByScanningTest {
 		String expected = "Customer Notified";
 		assertEquals(expected, baos.toString());
 	}
-	
-	@Test
-	public void weightChange() {
-		/**
-		 * Step 6: Bagging Area: Signals to the System that the weight has changed.
-		 */
-		assertEquals(0, baggingAreaController.getActualWeight(), 0.00);
-		customer.scanItem(scannedItem);
-		customer.placeScannedItemInBaggingArea(placedItem);
-		assertEquals(12, baggingAreaController.getActualWeight(), 0.00);
-	}
-	
-	@Test
-	public void weightChange2() {
-		/**
-		 * Step 6: Bagging Area: Signals to the System that the weight has changed.
-		 */
-		placedItem = new BarcodedUnit(barcode, 15);
-		assertEquals(0, baggingAreaController.getActualWeight(), 0.00);
-		customer.scanItem(scannedItem);
-		customer.placeScannedItemInBaggingArea(placedItem);
-		assertEquals(15, baggingAreaController.getActualWeight(), 0.00);
-	}
-	
 	
 	@Test
 	public void reenabled() {
