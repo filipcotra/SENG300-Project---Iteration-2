@@ -61,6 +61,20 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	}
 	
 	/**
+	 * Getter for expectedWeight. Returns expectedWeight.
+	 */
+	public double getExpectedWeight() {
+		return this.expectedWeight;
+	}
+	
+	/**
+	 * Getter for actualWeight. Returns expectedWeight.
+	 */
+	public double getActualWeight() {
+		return this.actualWeight;
+	}
+	
+	/**
 	 * This function will handle purchasing a certain amount of reusable bags. These bags will
 	 * be added to the Customer's bill. The bags will also be added to the expected weight of the bagging area.
 	 * Due to miscommunication with the hardware department, the simulation does not have anything related
@@ -160,7 +174,12 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	}
 	
 	public boolean addOwnBags() {
-			attendantIO.checkAddedOwnBags();
+		attendantIO.checkAddedOwnBags();
+		if (this.ownBags == true) {
 			return true;
-			}
+		}
+		else {
+			return false;
+		}
 	}
+}
