@@ -25,7 +25,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	public boolean purchasingBags;
 	
 	public double REUSABLE_BAG_WEIGHT = 5;
-	public BigDecimal REUSABLE_BAG_COST = new BigDecimal(4.99);
+	public BigDecimal REUSABLE_BAG_COST = BigDecimal.valueOf(4.99);
 	
 	public BaggingAreaController(SelfCheckoutStation station, CustomerIO customerIO, AttendantIO attendantIO, PaymentControllerLogic paymentController) {
 		this.station = station;
