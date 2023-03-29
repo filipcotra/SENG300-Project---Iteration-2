@@ -39,6 +39,7 @@ import com.autovend.devices.SelfCheckoutStation;
 import com.autovend.external.CardIssuer;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
+import com.autovend.software.AddItemByScanningController;
 import com.autovend.software.AttendantIO;
 import com.autovend.software.BaggingAreaController;
 import com.autovend.software.ConnectionIO;
@@ -57,6 +58,7 @@ public class WeightDiscrepancyTest {
 	PaymentControllerLogic paymentController;
 	PrintReceipt printerController;
 	BaggingAreaController baggingAreaController;
+	AddItemByScanningController scanningController;
 	public int scaleMaximumWeight;
 	public int scaleSensitivity;
 	public BarcodedProduct marsBar;
@@ -77,6 +79,7 @@ public class WeightDiscrepancyTest {
 		this.printerController = new PrintReceipt(station, station.printer, customerIO, attendantIO);
 		this.paymentController = new PaymentControllerLogic(station, customerIO, attendantIO, connection, printerController);
 		this.baggingAreaController = new BaggingAreaController(station, customerIO, attendantIO, paymentController);
+		this.scanningController = new AddItemByScanningController(station, customerIO, attendantIO, paymentController, baggingAreaController);
 		marsBarBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.one);
 		mbPrice = new BigDecimal(1.25);
 		marsBar = new BarcodedProduct(marsBarBarcode,"chocolate",mbPrice,15);
@@ -103,8 +106,17 @@ public class WeightDiscrepancyTest {
 		BarcodedUnit mbWeighted = new BarcodedUnit(marsBarWeightedBarcode, 20);
 		station.mainScanner.scan(mb);
 		station.baggingArea.add(mbWeighted);
+		assertTrue(baggingAreaController.weightDiscrepancy);
 		assertTrue(customerIO.customerWeightDiscrepancySignal);
 		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
+		
+		assertTrue(station.printer.isDisabled());
+		assertTrue(station.mainScanner.isDisabled());
+		assertTrue(station.handheldScanner.isDisabled());
+		assertTrue(station.billInput.isDisabled());
+		assertTrue(station.billOutput.isDisabled());
+		assertTrue(station.billStorage.isDisabled());
+		assertTrue(station.billValidator.isDisabled());
 	}
 	
 	@Test
@@ -113,17 +125,122 @@ public class WeightDiscrepancyTest {
 		BarcodedUnit mbWeighted = new BarcodedUnit(marsBarWeightedBarcode, 20);
 		station.mainScanner.scan(mb);
 		station.baggingArea.add(mbWeighted);
+		assertTrue(baggingAreaController.weightDiscrepancy);
 		assertTrue(customerIO.customerWeightDiscrepancySignal);
 		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
+		
+		assertTrue(station.printer.isDisabled());
+		assertTrue(station.mainScanner.isDisabled());
+		assertTrue(station.handheldScanner.isDisabled());
+		assertTrue(station.billInput.isDisabled());
+		assertTrue(station.billOutput.isDisabled());
+		assertTrue(station.billStorage.isDisabled());
+		assertTrue(station.billValidator.isDisabled());
+		
+		assertEquals(mbWeighted.getWeight(), baggingAreaController.actualWeight, 0);
+		assertEquals(mb.getWeight(), baggingAreaController.expectedWeight, 0.0);
 		attendantIO.approveWeightDiscrepancy(customerIO);
+		assertFalse(baggingAreaController.weightDiscrepancy);
 		assertFalse(customerIO.customerWeightDiscrepancySignal);
-		assertFalse(attendantIO.attendantWeightDiscrepancySignal);
-		assertEquals(mbWeighted.getWeight(), baggingAreaController.expectedWeight, 0.001d);
-		assertEquals(mbWeighted.getWeight(), baggingAreaController.actualWeight, 0.001d);
+		assertFalse(attendantIO.attendantWeightDiscrepancySignal);		
+		assertEquals(mbWeighted.getWeight(), baggingAreaController.expectedWeight, 0);
+		assertEquals(mbWeighted.getWeight(), baggingAreaController.actualWeight, 0);
+		
+		assertFalse(station.printer.isDisabled());
+		assertFalse(station.mainScanner.isDisabled());
+		assertFalse(station.handheldScanner.isDisabled());
+		assertFalse(station.billInput.isDisabled());
+		assertFalse(station.billOutput.isDisabled());
+		assertFalse(station.billStorage.isDisabled());
+		assertFalse(station.billValidator.isDisabled());
 	}
 	
 	@Test
 	public void weightDiscrepancyDueToBagPurchased() {
+		customerIO.signalPurchaseBags(1);
+		double expectedTotalBagWeight = baggingAreaController.REUSABLE_BAG_WEIGHT * (double)1;
+		
+		// we are not sure if the bag would have a barcode, but for the sake of testing
+		// we will create a bag as a barcoded unit
+		Barcode slightlyWeightedBagBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.four);
+		BarcodedUnit swbWeighted = new BarcodedUnit(slightlyWeightedBagBarcode, baggingAreaController.REUSABLE_BAG_WEIGHT + 5);
+		station.baggingArea.add(swbWeighted);
+		assertTrue(baggingAreaController.weightDiscrepancy);
+		assertTrue(customerIO.customerWeightDiscrepancySignal);
+		assertTrue(attendantIO.attendantWeightDiscrepancySignal);
+		
+		assertTrue(station.printer.isDisabled());
+		assertTrue(station.mainScanner.isDisabled());
+		assertTrue(station.handheldScanner.isDisabled());
+		assertTrue(station.billInput.isDisabled());
+		assertTrue(station.billOutput.isDisabled());
+		assertTrue(station.billStorage.isDisabled());
+		assertTrue(station.billValidator.isDisabled());
+		
+		assertEquals(swbWeighted.getWeight(), baggingAreaController.actualWeight, 0);
+		assertEquals(expectedTotalBagWeight, baggingAreaController.expectedWeight, 0.0);
+		attendantIO.approveWeightDiscrepancy(customerIO);
+		assertFalse(customerIO.customerWeightDiscrepancySignal);
+		assertFalse(attendantIO.attendantWeightDiscrepancySignal);
+		assertEquals(swbWeighted.getWeight(), baggingAreaController.expectedWeight, 0);
+		assertEquals(swbWeighted.getWeight(), baggingAreaController.actualWeight, 0);
+		
+		assertFalse(station.printer.isDisabled());
+		assertFalse(station.mainScanner.isDisabled());
+		assertFalse(station.handheldScanner.isDisabled());
+		assertFalse(station.billInput.isDisabled());
+		assertFalse(station.billOutput.isDisabled());
+		assertFalse(station.billStorage.isDisabled());
+		assertFalse(station.billValidator.isDisabled());
+	}
+	
+	@Test
+	public void noWeightDiscrepancy() {
+		station.mainScanner.scan(mb);
+		station.baggingArea.add(mb);
+		assertFalse(baggingAreaController.weightDiscrepancy);
+		assertFalse(baggingAreaController.weightDiscrepancy);
+		assertFalse(customerIO.customerWeightDiscrepancySignal);
+		assertFalse(attendantIO.attendantWeightDiscrepancySignal);	
+		assertEquals(mb.getWeight(), baggingAreaController.expectedWeight, 0);
+		assertEquals(mb.getWeight(), baggingAreaController.actualWeight, 0);
+		
+		assertFalse(station.printer.isDisabled());
+		assertFalse(station.mainScanner.isDisabled());
+		assertFalse(station.handheldScanner.isDisabled());
+		assertFalse(station.billInput.isDisabled());
+		assertFalse(station.billOutput.isDisabled());
+		assertFalse(station.billStorage.isDisabled());
+		assertFalse(station.billValidator.isDisabled());
+	}
+	
+	@Test
+	public void noWeightDiscrepancyWithPurchasedBags() {
+		customerIO.signalPurchaseBags(1);
+		double expectedTotalBagWeight = baggingAreaController.REUSABLE_BAG_WEIGHT * (double)1;
+		
+		// we are not sure if the bag would have a barcode, but for the sake of testing
+		// we will create a bag as a barcoded unit
+		Barcode bagBarcode = new Barcode(Numeral.zero,Numeral.zero,Numeral.five);
+		BarcodedUnit bag = new BarcodedUnit(bagBarcode, baggingAreaController.REUSABLE_BAG_WEIGHT);
+		station.baggingArea.add(bag);
+		
+		assertFalse(baggingAreaController.weightDiscrepancy);
+		assertFalse(baggingAreaController.weightDiscrepancy);
+		assertFalse(customerIO.customerWeightDiscrepancySignal);
+		assertFalse(attendantIO.attendantWeightDiscrepancySignal);	
+		assertEquals(bag.getWeight(), baggingAreaController.expectedWeight, 0);
+		assertEquals(bag.getWeight(), baggingAreaController.actualWeight, 0);
+		
+		assertTrue(customerIO.finishedPurchasingBagsSignal);
+		
+		assertFalse(station.printer.isDisabled());
+		assertFalse(station.mainScanner.isDisabled());
+		assertFalse(station.handheldScanner.isDisabled());
+		assertFalse(station.billInput.isDisabled());
+		assertFalse(station.billOutput.isDisabled());
+		assertFalse(station.billStorage.isDisabled());
+		assertFalse(station.billValidator.isDisabled());
 		
 	}
 		

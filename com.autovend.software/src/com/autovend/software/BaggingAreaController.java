@@ -135,6 +135,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	 * successfully
 	 */
 	public void weightDiscrepancyApproved() {
+		this.weightDiscrepancy = false;
 		this.unblockSystem();
 		this.expectedWeight = this.actualWeight;
 		if (purchasingBags == true) {
@@ -170,6 +171,7 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 			if (purchasingBags == true) {	// if purchased bags, call to finishedPurchasingBags
 				this.finishedPurchasingBags();
 			}
+			weightDiscrepancy = false;
 			this.unblockSystem(); // unblock the system 
 		}
 		
