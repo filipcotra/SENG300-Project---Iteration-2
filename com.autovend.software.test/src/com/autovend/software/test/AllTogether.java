@@ -19,11 +19,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Currency;
+import java.util.Scanner;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -33,7 +36,11 @@ import org.junit.Test;
 import com.autovend.Barcode;
 import com.autovend.BarcodedUnit;
 import com.autovend.Bill;
+import com.autovend.BlockedCardException;
 import com.autovend.Card;
+import com.autovend.CreditCard;
+import com.autovend.DebitCard;
+import com.autovend.InvalidPINException;
 import com.autovend.Numeral;
 import com.autovend.Card.CardData;
 import com.autovend.devices.AbstractDevice;
@@ -48,6 +55,7 @@ import com.autovend.devices.SimulationException;
 import com.autovend.devices.observers.AbstractDeviceObserver;
 import com.autovend.devices.observers.BillDispenserObserver;
 import com.autovend.devices.observers.BillSlotObserver;
+import com.autovend.devices.observers.CardReaderObserver;
 import com.autovend.external.CardIssuer;
 import com.autovend.external.ProductDatabases;
 import com.autovend.products.BarcodedProduct;
@@ -57,12 +65,14 @@ import com.autovend.software.AttendantIO;
 import com.autovend.software.BaggingAreaController;
 import com.autovend.software.ConnectionIO;
 import com.autovend.software.CustomerIO;
+import com.autovend.software.MembershipNumberController;
 import com.autovend.software.PaymentControllerLogic;
 import com.autovend.software.PrintReceipt;
 import com.autovend.software.test.PaymentWithCashTest.BillDispenserStub;
 import com.autovend.software.test.PaymentWithCashTest.MyAttendantIO;
 import com.autovend.software.test.PaymentWithCashTest.MyBillSlotObserver;
 import com.autovend.software.test.PaymentWithCashTest.MyCustomerIO;
+import com.autovend.software.test.payWithCardTest.cardReaderObserverStub;
 
 public class AllTogether {
 	
@@ -86,6 +96,12 @@ public class AllTogether {
 	Bill billHundred;
 	ArrayList<Integer> ejectedBills; 
 	BillDispenserStub billObserverStub;
+	CreditCard CCard;
+	DebitCard DCard;
+	CardIssuer creditBank;
+	CardIssuer debitBank;
+	Calendar calendar;
+	int BlockedCard = 0;
 	final PrintStream originalOut = System.out;
 	ByteArrayOutputStream baos;
 	PrintStream ps;
@@ -108,19 +124,47 @@ public class AllTogether {
 	BarcodedProduct testProduct2;
 	BarcodedProduct testProduct3;
 	BarcodedProduct testProduct4;
+	// Create bank connection variables
 	MyConnectionIO connection;
+	boolean falseNegative;
+	boolean connectFirstTime;
+	int connectionTries;
+	boolean neverConnect;
+	// Create membership number variables
+	String inputData;
+	String membershipGood;
+	MembershipNumberController membershipController;
 	
 	class MyConnectionIO implements ConnectionIO{
 
 		@Override
 		public boolean connectTo(CardIssuer bank) {
-			// TODO Auto-generated method stub
-			return false;
+			connectionTries++;
+			if(connectFirstTime) {
+				if(connectionTries == 1) {
+					return true;
+				}
+				return false;
+			}
+			if(neverConnect) {
+				return false;
+			}
+			if(bank == null) {
+				return false;
+			}
+			return true;
 		}
 		
 	}
 	
 	class MyCustomerIO implements CustomerIO {
+		
+		//Various signal flags for bag purchases
+		boolean purchaseBagsSignal = false;
+		int purchaseBagsQuantity = 0;
+		boolean finishedPurchasingBagsSignal = false;
+		boolean interactionReadySignal = false;
+		boolean placePurchasedBagsSignal = false;
 
 	@Override
 	public void scanItem(BarcodedUnit item) {
@@ -162,8 +206,7 @@ public class AllTogether {
 	
 	@Override
 	public boolean selectAddOwnBags() {
-		// TODO Auto-generated method stub
-		return true;
+		return baggingAreaController.addOwnBags();
 	}
 	
 	@Override
@@ -197,8 +240,10 @@ public class AllTogether {
 	}
 
 	public void signalPurchaseBags(int quantity) {
-
-		// TODO Auto-generated method stub
+		this.purchaseBagsSignal = true;
+		this.purchaseBagsQuantity = quantity;
+		
+		baggingAreaController.purchaseBags(quantity);
 		
 	}
 
@@ -209,8 +254,7 @@ public class AllTogether {
 	}
 
 	public void signalFinishedPurchasingBags() {
-
-		// TODO Auto-generated method stub
+		this.finishedPurchasingBagsSignal = true;
 		
 	}
 
@@ -226,32 +270,46 @@ public class AllTogether {
 	}
 
 	public void signalReadyForInteraction() {
-
-		// TODO Auto-generated method stub
+		this.interactionReadySignal = true;
 		
 	}
 
 	@Override
 
 	public void setCardPaymentAmount(BigDecimal amount) {
-		
+		paymentController.setCardPaymentAmount(amount);
 	}
 
 	public void signalPutPurchasedBagsOnBaggingArea() {
-
-		// TODO Auto-generated method stub
+		this.placePurchasedBagsSignal = true;
 		
 	}
 
 	@Override
 
 	public void insertCard(Card card, String pin) {
+		CardData data = null;
+		try {
+			data = selfCheckoutStation.cardReader.insert(card, pin);
+		}
+		catch(InvalidPINException e) {
+			//paymentController.blockCardAtBank(data);
+		}
+		catch(BlockedCardException e) {
+			BlockedCard++;
+		}
+		catch(DisabledException e) {
+			throw new DisabledException();
+		}
+		catch(Exception e) {
+		}
 		
 	}
-
+	// For all together test, assuming valid number entered and returned, since testing over validity
+	// has already been tested individually
 	public String getMembershipNumber() {
-		// TODO Auto-generated method stub
-		return null;
+		inputData = membershipGood;
+		return inputData;
 	}
 
 	@Override
@@ -297,19 +355,22 @@ public class AllTogether {
 
 		@Override
 		public void approveWeightDiscrepancy(CustomerIO customerIO) {
-			// TODO Auto-generated method stub
+			///Calls weightDiscrepancyApproved in the bagging area controller for purchased bag test
+			baggingAreaController.weightDiscrepancyApproved();
 			
 		}
 
 		@Override
 		public void checkAddedOwnBags() {
-			// TODO Auto-generated method stub
+			baggingAreaController.blockSystem();
+			this.acceptOwnBags();
 			
 		}
 
+		// For all together tests, assume that attendant verifies it is customer own bag and approves
 		@Override
 		public void acceptOwnBags() {
-			// TODO Auto-generated method stub
+			baggingAreaController.unblockSystem();
 			
 		}
 
@@ -326,6 +387,54 @@ public class AllTogether {
 		
 	}
 	
+	// Set up a card reader observer stub to use in test cases
+		class cardReaderObserverStub implements CardReaderObserver{
+
+			@Override
+			public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void reactToDisabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void reactToCardInsertedEvent(CardReader reader) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void reactToCardRemovedEvent(CardReader reader) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void reactToCardTappedEvent(CardReader reader) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void reactToCardSwipedEvent(CardReader reader) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			// Track if card was successfully inserted, to ensure random chip errors
+			// do not cause a test to fail when not being specifically tested
+			@Override
+			public void reactToCardDataReadEvent(CardReader reader, CardData data) {
+				falseNegative = false;
+			}
+			
+		}
+	
 	@Before
 	public void setup() {
 		// Setting up new print stream to catch printed output, used to test terminal output
@@ -337,11 +446,16 @@ public class AllTogether {
 				billTwenty = new Bill(20, Currency.getInstance("CAD"));
 				billFifty = new Bill(50, Currency.getInstance("CAD"));
 				billHundred = new Bill(100, Currency.getInstance("CAD"));
+				CCard = new CreditCard("Credit", "123456", "Jeff", "456", "4321", true, true);
+				DCard = new DebitCard("Debit", "123456", "Jeff", "456", "4321", true, true);
+				creditBank = new CardIssuer("Credit Bank");
+				debitBank = new CardIssuer("Debit Bank");
 				selfCheckoutStation = new SelfCheckoutStation(Currency.getInstance("CAD"), new int[] {5,10,20,50,100}, 
 						new BigDecimal[] {new BigDecimal(1),new BigDecimal(2)}, 10000, 5);
 				customer = new MyCustomerIO();
 				attendant = new MyAttendantIO();
 				connection = new MyConnectionIO();
+				falseNegative = true;
 				ejectedBills = new ArrayList<Integer>();		
 				/* Load one hundred, $5, $10, $20, $50 bills into the dispensers so we can dispense change during tests.
 				 * Every dispenser has a max capacity of 100 
@@ -403,7 +517,24 @@ public class AllTogether {
 				this.paymentController = new PaymentControllerLogic(selfCheckoutStation, customer, attendant, connection, receiptPrinterController);
 				this.baggingAreaController = new BaggingAreaController(selfCheckoutStation, customer, attendant, paymentController);
 				this.addItemByScanningController = new AddItemByScanningController(selfCheckoutStation, customer, attendant, paymentController, baggingAreaController);
+				
+				int validMemberLength = 10;
+				char[] validChars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+				this.membershipController = new MembershipNumberController(validChars, validMemberLength, customer);
+				membershipGood = "1231231231"; // Good memberships only contain digits
 				receiptPrinterController.setContents(1024, 1024);
+				selfCheckoutStation.cardReader.register(new cardReaderObserverStub());
+				paymentController.setBanks(creditBank, debitBank);
+				calendar = Calendar.getInstance();
+				// Expiry data is 3 years from now
+				calendar.add(Calendar.YEAR, 3);
+				BigDecimal creditLimit = BigDecimal.valueOf(1000);
+				creditBank.addCardData("123456", "Jeff", calendar,"456", creditLimit);
+				BigDecimal debitLimit = BigDecimal.valueOf(1000);
+				debitBank.addCardData("123456", "Jeff", calendar,"456", debitLimit);
+				connectionTries = 0;
+				connectFirstTime = false;
+				neverConnect = false;
 
 	}
 	/* 
@@ -436,6 +567,7 @@ public class AllTogether {
 		// scan item
 		customer.scanItem(scannedItem3);
 		customer.placeScannedItemInBaggingArea(placedItem3);
+		customer.selectPaymentMethod("Cash", paymentController);
 		// The customer inserts a one-hundred dollar bill
 		try {
 			this.selfCheckoutStation.billInput.accept(billFifty);
@@ -475,23 +607,24 @@ public class AllTogether {
 	}
 	
 	/* 
-	 * Test Case: The customer pays the cart total, but not all at once.
+	 * Test Case: The customer pays the cart total in cash, but not all at once.
 	 * 
-	 * Description: The user adds an item, then pays, then adds and pays once more.
+	 * Description: The user adds an item, then pays, then adds another item and pays once more.
 	 * This was specified as necessary as per the discussion board.
 	 */
 	@Test
-	public void addPayAddPay() {
-		customer.selectPaymentMethod("Cash", paymentController);
+	public void addItemPayCashAddItemPayCash() {
 		// scan first item
 		customer.scanItem(scannedItem4);
 		customer.placeScannedItemInBaggingArea(placedItem4);
+		customer.selectPaymentMethod("Cash", paymentController);
 		try {
 			this.selfCheckoutStation.billInput.accept(billTwenty);
 		} catch (Exception e) {fail();}
 		// scan second item
 		customer.scanItem(scannedItem1);
 		customer.placeScannedItemInBaggingArea(placedItem1);
+		customer.selectPaymentMethod("Cash", paymentController);
 		try {
 			this.selfCheckoutStation.billInput.accept(billTwenty);
 		} catch (Exception e) {fail();}
@@ -503,6 +636,131 @@ public class AllTogether {
 				+ "Change: $5.0\n",
 				selfCheckoutStation.printer.removeReceipt());
 	}
+	
+	/* 
+	 * Test Case: The customer pays the cart total in card, but not all at once.
+	 * 
+	 * Description: The user adds an item, then pays, then adds another item and pays once more.
+	 * This was specified as necessary as per the discussion board.
+	 */
+	@Test
+	public void addItemPayCardAddItemPayCard() {
+		
+		// scan first item
+		customer.scanItem(scannedItem4);
+		customer.placeScannedItemInBaggingArea(placedItem4);
+		customer.selectPaymentMethod("Credit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		while(falseNegative) {
+			customer.insertCard(CCard, "4321");
+		}
+		falseNegative = true;
+		// scan second item
+		customer.scanItem(scannedItem1);
+		customer.placeScannedItemInBaggingArea(placedItem1);
+		customer.selectPaymentMethod("Credit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		while(falseNegative) {
+			customer.insertCard(CCard, "4321");
+		}
+	assertEquals(	  
+				  "Item 4      $25\n"
+				+ "Item 1      $10\n"
+				+ "Total: $35.00\n"
+				+ "Paid: $35.0\n\n"
+				+ "Change: $0.0\n",
+				selfCheckoutStation.printer.removeReceipt());
+	}
+	
+	/* 
+	 * Test Case: The customer pays part of the total in card, then adds another item, then pays the rest
+	 * in cash.
+	 * 
+	 * Description: The user adds an item, then pays, then adds another item and pays once more.
+	 * This was specified as necessary as per the discussion board.
+	 */
+	@Test
+	public void addItemPayCardAddItemPayCash() {
+		
+		// scan first item
+		customer.scanItem(scannedItem4);
+		customer.placeScannedItemInBaggingArea(placedItem4);
+		customer.selectPaymentMethod("Credit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(20.0));
+		while(falseNegative) {
+			customer.insertCard(CCard, "4321");
+		}
+		falseNegative = true;
+		// scan second item
+		customer.scanItem(scannedItem1);
+		customer.placeScannedItemInBaggingArea(placedItem1);
+		customer.selectPaymentMethod("Cash", paymentController);
+		try {
+			this.selfCheckoutStation.billInput.accept(billTwenty);
+		} catch (Exception e) {fail();}
+	assertEquals(	  
+				  "Item 4      $25\n"
+				+ "Item 1      $10\n"
+				+ "Total: $35.00\n"
+				+ "Paid: $40.0\n\n"
+				+ "Change: $5.0\n",
+				selfCheckoutStation.printer.removeReceipt());
+	}
+	
+	/* 
+	 * Test Case: The customer starts by adding membership number, then adds their own bag,
+	 * then adds an item and then pays in full with cash, with no change.
+	 */
+	@Test
+	public void memberNumberOwnBagAddItemPayCashNoChange() {
+		// Customer starts by entering membership number
+		customer.getMembershipNumber();
+		// Then customer adds their own bag and attendant approves it
+		customer.selectAddOwnBags();
+		attendant.checkAddedOwnBags();
+		// scan item
+		customer.scanItem(scannedItem3);
+		customer.placeScannedItemInBaggingArea(placedItem3);
+		customer.selectPaymentMethod("Cash", paymentController);
+		// The customer inserts a fifty dollar bill
+		try {
+			this.selfCheckoutStation.billInput.accept(billFifty);
+		} catch (Exception e) {fail();}
+		assertEquals(	  
+				  "Item 3      $50\n"
+				+ "Total: $50.00\n"
+				+ "Paid: $50.0\n\n"
+				+ "Change: $0.0\n",
+				selfCheckoutStation.printer.removeReceipt());
+	}
+	
+	/* 
+	 * Test Case: The customer starts by purchasing a bag,
+	 * then adds an item and then pays in full with cash, with no change.
+	 */
+	@Test
+	public void purchaseBagAddItemPayCard() {
+		// Customer purchases a bag and attendant approves it
+		customer.signalPurchaseBags(1);
+		attendant.approveWeightDiscrepancy(customer);
+		// scan item
+		customer.scanItem(scannedItem3);
+		customer.placeScannedItemInBaggingArea(placedItem3);
+		customer.selectPaymentMethod("Credit", paymentController);
+		customer.setCardPaymentAmount(BigDecimal.valueOf(60.0));
+		while(falseNegative) {
+			customer.insertCard(CCard, "4321");
+		}
+		assertEquals(	
+				"Reusable Bag      $4.99\n"
+				+  "Item 3      $50\n"
+				+ "Total: $54.99\n"
+				+ "Paid: $54.99\n\n"
+				+ "Change: $0.0\n",
+				selfCheckoutStation.printer.removeReceipt());
+	}
+	
+	
 	/*
 	 * Given that all of the individual controller classes were tested
 	 * individually, these tests should be sufficient to ensure that

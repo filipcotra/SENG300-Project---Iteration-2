@@ -1,18 +1,3 @@
-/*
-  * Brian Tran (30064686)
-  * Filip Cotra (30086750)
-  * Arian Safari (30161346)
-  * Justin Clibbett (30128271)
-  * Umar Ahmed (30145076)
-  * Farbod Moghaddam (30115199)
-  * Abdul Alkareem Biderkab (30156693)
-  * Naheen Kabir (30142101)
-  * Khalen Drissi (30133707)
-  * Darren Roszell (30163669)
-  * Justin Yee (30113485)
-  * Christian Salvador (30089672)
-  */
-
 package com.autovend.software;
 
 import com.autovend.devices.AbstractDevice;
@@ -128,20 +113,6 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 			this.finishedPurchasingBags();
 		}
 	}
-	
-	/**
-	 * Getter for expectedWeight. Returns expectedWeight.
-	 */
-	public double getExpectedWeight() {
-		return this.expectedWeight;
-	}
-	
-	/**
-	 * Getter for actualWeight. Returns expectedWeight.
-	 */
-	public double getActualWeight() {
-		return this.actualWeight;
-	}
 
 	@Override
 	public void reactToEnabledEvent(AbstractDevice<? extends AbstractDeviceObserver> device) {
@@ -167,24 +138,11 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 			customerIO.notifyWeightDiscrepancyCustomerIO();
 			// Step 3. Notify Attendant
 			attendantIO.notifyWeightDiscrepancyAttendantIO();
-			// Step 4. Attendant approves discrepancy
-			// Attendant interaction required: attendantIO.approveWeightDiscrepancy()
-//			if (attendantIO.approveWeightDiscrepancy()) {
-//				this.unblockSystem(); // Unblock the system
-//				this.expectedWeight = this.actualWeight; // update expected weight to match the actual weight
-//				if (purchasingBags == true) {	// if purchase of bags caused the discrepancy, once approved, call to finishedPurchasingBags
-//					this.finishedPurchasingBags();
-//				}
-//			}
-//			// If they don't approve, then remain blocked
-//			else {
-//				this.blockSystem();
-//			}
 		} else { // If there is no discrepancy then unblock the system
 			if (purchasingBags == true) {	// if purchased bags, call to finishedPurchasingBags
 				this.finishedPurchasingBags();
 			}
-			this.unblockSystem(); // Step 7, unblock the system 
+			this.unblockSystem(); // unblock the system 
 		}
 		
 	}
@@ -203,11 +161,11 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	
 	public boolean addOwnBags() {
 			attendantIO.checkAddedOwnBags();
-			if (this.ownBags == true) {
-				return true;
+			return true;
 			}
-			else {
-				return false;
-			}
+	
+
+	public void selectAddOwnBags() {
+		customerIO.indicateAddOwnBags();
 	}
-}
+	}
