@@ -408,6 +408,7 @@ public class payWithCardTest {
 		connectionTries = 0;
 		connectFirstTime = false;
 		neverConnect = false;
+		falseNegative = true;
 	}
 	
 	// Tear down after each test case

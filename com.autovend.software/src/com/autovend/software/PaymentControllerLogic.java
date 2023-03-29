@@ -506,9 +506,6 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 				while(tries < 5) { // Exception 3
 					if(!this.connectToBank(this.creditBank)) {
 						tries++;
-						try {	
-							TimeUnit.SECONDS.sleep(20);
-						} catch(Exception exc) {}
 					}
 					else {
 						activeBank.postTransaction(data.getNumber(), creditHoldNumber, this.amountToPayCard);
@@ -561,9 +558,6 @@ CoinValidatorObserver, CoinTrayObserver, CoinDispenserObserver, CardReaderObserv
 				while(tries < 5) { // Exception 3
 					if(!this.connectToBank(this.debitBank)) {
 						tries++;
-						try {	
-							TimeUnit.SECONDS.sleep(20);
-						} catch(Exception exc) {}
 					}
 					else {
 						activeBank.postTransaction(data.getNumber(), debitHoldNumber, this.amountToPayCard);
