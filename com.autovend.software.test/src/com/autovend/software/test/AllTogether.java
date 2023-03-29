@@ -535,6 +535,7 @@ public class AllTogether {
 				connectionTries = 0;
 				connectFirstTime = false;
 				neverConnect = false;
+				falseNegative = true;
 
 	}
 	/* 
