@@ -44,6 +44,7 @@ public class EnterMembershipNumberTest {
 	String membershipGood;
 	String membershipBad;
 	String membershipShort;
+	String membershipLong;
 	String inputData;
 	
 	
@@ -91,6 +92,9 @@ public class EnterMembershipNumberTest {
 			
 		}
 
+		/*
+		 * Simulates a membership number being entered by the customer via a touch screen and read by the system for testing purposes
+		 */
 		@Override
 		public String getMembershipNumber() {
 			System.setIn(new ByteArrayInputStream(inputData.getBytes()));
@@ -104,6 +108,9 @@ public class EnterMembershipNumberTest {
 			return true;
 		}
 
+		/*
+		 * Simulates a response to the customer given by the system via a touch screen when it rejects the entered membership number
+		 */
 		@Override
 		public void notifyBadMembershipNumberCustomerIO() {
 			System.out.println("Invalid Membership Number. Please try again or cancel.");
@@ -198,13 +205,14 @@ public class EnterMembershipNumberTest {
 		// Setting the membership numbers
 		membershipGood = "1231231231"; // Good memberships only contain digits
 		membershipBad = "123bad7890"; // Bad memberships contain letters and other symbols
-		membershipShort = "123";
+		membershipShort = "123"; // Membership numbers have a specific length, cannot be too short or too long
+		membershipLong = "11223344556677889900";
 	}
 	
 
 	/**
 	 * Tests the getMembershipNumber function in the CustomerIO interface 
-	 * Expected result should be the same as the input string read from the Customern
+	 * Expected result should be the same as the input string read from the Customer
 	 */
 	@Test
 	public void testGetMembership() {
@@ -235,9 +243,24 @@ public class EnterMembershipNumberTest {
 		assertFalse(controller.checkValidMembershipNumber());
 	}
 	
+	/**
+	 * Tests the addMembershipNumber function in PaymentControllerLogic for when a membership number of invalid length is entered (too short)
+	 * Result should set the valid variable to false when notifyBadMembershipNumberCustomerIO is called
+	 */
 	@Test
 	public void testShortMembershipEntered() {
 		inputData = membershipShort;
+		controller.addMembershipNumber();
+		assertFalse(controller.checkValidMembershipNumber());
+	}
+	
+	/**
+	 * Tests the addMembershipNumber function in PaymentControllerLogic for when a membership number of invalid length is entered (too long)
+	 * Result should set the valid variable to false when notifyBadMembershipNumberCustomerIO is called
+	 */
+	@Test
+	public void testLongMembershipEntered() {
+		inputData = membershipLong;
 		controller.addMembershipNumber();
 		assertFalse(controller.checkValidMembershipNumber());
 	}
