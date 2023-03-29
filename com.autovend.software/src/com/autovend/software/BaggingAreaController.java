@@ -1,3 +1,17 @@
+/*
+  * Brian Tran (30064686)
+  * Filip Cotra (30086750)
+  * Arian Safari (30161346)
+  * Justin Clibbett (30128271)
+  * Umar Ahmed (30145076)
+  * Farbod Moghaddam (30115199)
+  * Abdul Alkareem Biderkab (30156693)
+  * Naheen Kabir (30142101)
+  * Khalen Drissi (30133707)
+  * Darren Roszell (30163669)
+  * Justin Yee (30113485)
+  * Christian Salvador (30089672)
+  */
 package com.autovend.software;
 
 import com.autovend.devices.AbstractDevice;
@@ -58,6 +72,20 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 		this.station.billOutput.enable();
 		this.station.billStorage.enable();
 		this.station.billValidator.enable();
+	}
+	
+	/**
+	 * Getter for expectedWeight. Returns expectedWeight.
+	 */
+	public double getExpectedWeight() {
+		return this.expectedWeight;
+	}
+	
+	/**
+	 * Getter for actualWeight. Returns expectedWeight.
+	 */
+	public double getActualWeight() {
+		return this.actualWeight;
 	}
 	
 	/**
@@ -160,7 +188,12 @@ public class BaggingAreaController implements ElectronicScaleObserver{
 	}
 	
 	public boolean addOwnBags() {
-			attendantIO.checkAddedOwnBags();
+		attendantIO.checkAddedOwnBags();
+		if (this.ownBags == true) {
 			return true;
-			}
+		}
+		else {
+			return false;
+		}
 	}
+}
